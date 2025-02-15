@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/app/lib/mongodb"
 import News from "@/app/models/News"
-import { verifyWebhook, logWebhookRequest } from "@/app/lib/webhookMiddleware"
+import { verifyWebhook } from "@/app/lib/webhookMiddleware"
 
 export async function GET(req) {
   let response = null
