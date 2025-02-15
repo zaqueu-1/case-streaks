@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { formatDate } from "../utils/utils"
+import { formatDate, getStreakMessage } from "../utils/utils"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -57,6 +57,14 @@ export default function DashboardPage() {
           <h1 className='text-xl font-bold font-verdana text-secondary mb-8 lg:text-xl'>
             Olá, {session?.user?.email}!
           </h1>
+
+          {stats?.currentStreak > 0 && (
+            <div className='mb-8 bg-white p-4 rounded-lg border-2 border-primary'>
+              <p className='text-lg font-medium font-poppins text-secondary'>
+                {getStreakMessage(stats.currentStreak)}
+              </p>
+            </div>
+          )}
 
           <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
             <div className='bg-white overflow-hidden shadow rounded-lg border-2 border-primary'>
