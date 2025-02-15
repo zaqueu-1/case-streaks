@@ -22,7 +22,7 @@ export async function GET(req) {
         totalAccesses: 1,
         lastAccess: 1,
         createdAt: 1,
-        accesses: { $slice: -10 },
+        accesses: 1,
       })
       .lean()
 
@@ -34,18 +34,19 @@ export async function GET(req) {
     }
 
     const streaks = calculateStreaks(userRecord.accesses)
-
     const utmStats = calculateUtmStats(userRecord.accesses)
+
+    const recentAccesses = userRecord.accesses.slice(-10)
 
     return NextResponse.json({
       email: userRecord.email,
-      totalAccesses: userRecord.totalAccesses,
+      totalAccesses: userRecord.accesses.length,
       firstAccess: userRecord.createdAt,
       lastAccess: userRecord.lastAccess,
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
       utmStats,
-      recentAccesses: userRecord.accesses,
+      recentAccesses,
     })
   } catch (error) {
     console.error("Erro ao buscar estatísticas:", error)
@@ -63,66 +64,54 @@ function calculateStreaks(accesses) {
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
   )
 
+  const uniqueDays = new Set()
+  sortedAccesses.forEach((access) => {
+    const date = new Date(access.timestamp)
+    const dateString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+    uniqueDays.add(dateString)
+  })
+
+  const uniqueDatesArray = Array.from(uniqueDays)
+    .map((dateString) => {
+      const [year, month, day] = dateString.split("-")
+      return new Date(year, month, day)
+    })
+    .sort((a, b) => b - a) 
+
   let currentStreak = 0
   let longestStreak = 0
-  let currentDate = new Date()
+  let tempStreak = 0
 
-  currentDate.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-  if (currentDate.getDay() === 0) {
-    currentDate.setDate(currentDate.getDate() - 1)
-  }
+  for (let i = 0; i < uniqueDatesArray.length; i++) {
+    const currentDate = uniqueDatesArray[i]
+    const previousDate = i > 0 ? uniqueDatesArray[i - 1] : null
 
-  function getWorkingDays(startDate, endDate) {
-    let days = 0
-    let current = new Date(startDate)
-
-    while (current <= endDate) {
-      if (current.getDay() !== 0) {
-        days++
-      }
-      current.setDate(current.getDate() + 1)
-    }
-    return days - 1
-  }
-
-  for (let i = 0; i < sortedAccesses.length; i++) {
-    const accessDate = new Date(sortedAccesses[i].timestamp)
-    accessDate.setHours(0, 0, 0, 0)
-
-    if (accessDate.getDay() === 0) continue
-
-    const workingDays = getWorkingDays(accessDate, currentDate)
-
-    if (workingDays <= 1) {
-      currentStreak++
-      currentDate = accessDate
-    } else {
-      break
-    }
-  }
-
-  let tempStreak = 1
-  for (let i = 1; i < sortedAccesses.length; i++) {
-    const prevDate = new Date(sortedAccesses[i - 1].timestamp)
-    const currDate = new Date(sortedAccesses[i].timestamp)
-
-    prevDate.setHours(0, 0, 0, 0)
-    currDate.setHours(0, 0, 0, 0)
-
-    if (prevDate.getDay() === 0 || currDate.getDay() === 0) continue
-
-    const workingDays = getWorkingDays(currDate, prevDate)
-
-    if (workingDays <= 1) {
-      tempStreak++
-      longestStreak = Math.max(longestStreak, tempStreak)
-    } else {
+    if (i === 0) {
       tempStreak = 1
+    } else {
+      const dayDiff = Math.floor(
+        (previousDate - currentDate) / (1000 * 60 * 60 * 24),
+      )
+      if (dayDiff === 1) {
+        tempStreak++
+      } else {
+        tempStreak = 1
+      }
+    }
+
+    longestStreak = Math.max(longestStreak, tempStreak)
+
+    if (
+      i === 0 ||
+      (previousDate &&
+        Math.floor((today - previousDate) / (1000 * 60 * 60 * 24)) <= 1)
+    ) {
+      currentStreak = tempStreak
     }
   }
-
-  longestStreak = Math.max(longestStreak, currentStreak)
 
   return { currentStreak, longestStreak }
 }
