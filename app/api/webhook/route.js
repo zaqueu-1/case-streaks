@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import connectDB from "@/app/lib/mongodb"
 import News from "@/app/models/News"
 import { verifyWebhook } from "@/app/lib/webhookMiddleware"
+import { calculateLevelFromPoints } from "@/app/utils/utils"
 
 export async function GET(req) {
   let response = null
@@ -52,9 +53,11 @@ export async function GET(req) {
         lastAccess: now,
         createdAt: now,
         totalAccesses: 1,
+        points: 5,
+        level: 1,
       })
-    } else {      
-        const hasAccessToday = news.accesses.some((access) => {
+    } else {
+      const hasAccessToday = news.accesses.some((access) => {
         const accessDate = new Date(access.timestamp)
         return (
           accessDate.getFullYear() === today.getFullYear() &&
@@ -68,12 +71,15 @@ export async function GET(req) {
 
       if (!hasAccessToday) {
         news.totalAccesses = (news.totalAccesses || 0) + 1
+        news.points = (news.points || 0) + 5
+        news.level = calculateLevelFromPoints(news.points)
       }
     }
 
     await news.save()
 
     const totalAccesses = news.totalAccesses
+    const nextLevelPoints = news.level * 5 + 5
 
     response = NextResponse.json(
       {
@@ -86,6 +92,9 @@ export async function GET(req) {
           totalAccesses,
           lastAccess: news.lastAccess,
           currentAccess: newAccess,
+          points: news.points,
+          level: news.level,
+          pointsToNextLevel: nextLevelPoints - news.points,
         },
       },
       { status: 200 },

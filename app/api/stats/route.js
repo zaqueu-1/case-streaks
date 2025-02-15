@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import connectDB from "@/app/lib/mongodb"
 import News from "@/app/models/News"
 
+function calculateRequiredPointsForNextLevel(currentLevel) {
+  return currentLevel * 5 + 5
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url)
@@ -23,6 +27,8 @@ export async function GET(req) {
         lastAccess: 1,
         createdAt: 1,
         accesses: 1,
+        points: 1,
+        level: 1,
       })
       .lean()
 
@@ -35,8 +41,10 @@ export async function GET(req) {
 
     const streaks = calculateStreaks(userRecord.accesses)
     const utmStats = calculateUtmStats(userRecord.accesses)
-
     const recentAccesses = userRecord.accesses.slice(-10)
+    const nextLevelPoints = calculateRequiredPointsForNextLevel(
+      userRecord.level || 1,
+    )
 
     return NextResponse.json({
       email: userRecord.email,
@@ -45,6 +53,10 @@ export async function GET(req) {
       lastAccess: userRecord.lastAccess,
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
+      points: userRecord.points || 0,
+      level: userRecord.level || 1,
+      nextLevelPoints,
+      pointsToNextLevel: nextLevelPoints - (userRecord.points || 0),
       utmStats,
       recentAccesses,
     })
@@ -76,7 +88,7 @@ function calculateStreaks(accesses) {
       const [year, month, day] = dateString.split("-")
       return new Date(year, month, day)
     })
-    .sort((a, b) => b - a) 
+    .sort((a, b) => b - a)
 
   let currentStreak = 0
   let longestStreak = 0

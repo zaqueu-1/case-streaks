@@ -9,7 +9,9 @@ const config = {
     extend: {
       colors: {
         primary: "#FFCF00",
+        primary_muted: "#FFDF53",
         secondary: "#222222",
+        secondary_muted: "#444444",
         background: "#F9FAFB",
       },
       fontFamily: {

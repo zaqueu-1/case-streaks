@@ -34,6 +34,16 @@ const newsSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    points: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+    level: {
+      type: Number,
+      default: 1,
+      index: true,
+    },
   },
   {
     timestamps: true,
