@@ -3,6 +3,7 @@ import "./globals.css"
 import Providers from "./providers"
 import Script from "next/script"
 import Header from "./components/Header"
+import "./healthcheck"
 
 const montserrat = Montserrat({
   subsets: ["latin"],

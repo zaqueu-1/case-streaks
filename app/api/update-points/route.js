@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/app/lib/mongodb"
-import { calculateLevelFromPoints } from "@/app/utils/utils"
+import connectDB from "../../lib/mongodb"
+import { calculateLevelFromPoints } from "../../utils/utils"
 import mongoose from "mongoose"
 
 export async function GET() {

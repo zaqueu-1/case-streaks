@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/app/lib/mongodb"
-import News from "@/app/models/News"
+import connectDB from "../../lib/mongodb"
+import News from "../../models/News"
 
 function calculateRequiredPointsForNextLevel(currentLevel) {
   return currentLevel * 5 + 5

@@ -130,7 +130,7 @@ export default function AccessCalendar({ accesses }) {
           }`}
         >
           <span>{d}</span>
-          {isAccess && !isSunday && <span>📰</span>}
+          {isAccess && !isSunday && <span className="hidden sm:block">📰</span>}
         </div>,
       )
     }
@@ -139,7 +139,7 @@ export default function AccessCalendar({ accesses }) {
   }
 
   return (
-    <div className='w-full max-w-[70%] mx-auto bg-primary_muted rounded-lg shadow-lg p-6'>
+    <div className='w-full md:max-w-[70%] mx-auto bg-primary_muted rounded-lg shadow-lg p-6'>
       <div className='flex items-center justify-between mb-4'>
         <button
           onClick={previousMonth}

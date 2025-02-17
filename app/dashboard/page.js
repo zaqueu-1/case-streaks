@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import StatsCard from "../components/StatsCard/StatsCard"
 import LevelBadge from "../components/LevelBadge/LevelBadge"
 import AccessCalendar from "../components/AccessCalendar/AccessCalendar"
+import Achievements from "../components/Achievements/Achievements"
 import { formatDate, getStreakMessage } from "../utils/utils"
 
 export default function DashboardPage() {
@@ -18,7 +19,6 @@ export default function DashboardPage() {
     try {
       const response = await fetch(`/api/stats?email=${session.user.email}`)
       const data = await response.json()
-      console.log("Stats completos:", data)
       setStats(data)
     } catch (error) {
       console.error("Erro ao buscar estatísticas:", error)
@@ -71,6 +71,8 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          <Achievements stats={stats} />
 
           <div className='mt-10 flex flex-col gap-8 items-center justify-center sm:flex-row'>
             <StatsCard

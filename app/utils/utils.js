@@ -1,4 +1,4 @@
-import streakMessages from "@/app/data/streak-messages.json"
+import streakMessages from "../data/streak-messages.json"
 
 export function calculateLevelProgress(points, level) {
   const currentLevelMinPoints =

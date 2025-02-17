@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import connectDB from "@/app/lib/mongodb"
-import News from "@/app/models/News"
+import connectDB from "../../../lib/mongodb"
+import News from "../../../models/News"
 
 const handler = NextAuth({
   providers: [
@@ -55,7 +55,7 @@ const handler = NextAuth({
   debug: process.env.NODE_ENV === "development",
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, 
+    maxAge: 30 * 24 * 60 * 60,
   },
 })
 

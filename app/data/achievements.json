@@ -1,0 +1,39 @@
+{
+  "achievements": [
+    {
+      "id": "first_access",
+      "icon": "🎯",
+      "title": "Primeiro Acesso",
+      "description": "Começou sua jornada de conhecimento",
+      "condition": "true"
+    },
+    {
+      "id": "first_streak",
+      "icon": "🔥",
+      "title": "Primeira Sequência",
+      "description": "Completou 2 dias seguidos de leitura",
+      "condition": "stats?.longestStreak >= 2"
+    },
+    {
+      "id": "week_master",
+      "icon": "📚",
+      "title": "Mestre da Semana",
+      "description": "Completou 7 dias de leitura",
+      "condition": "stats?.longestStreak >= 7"
+    },
+    {
+      "id": "level_5",
+      "icon": "⭐",
+      "title": "Aprendiz Dedicado",
+      "description": "Atingiu o nível 5",
+      "condition": "stats?.level >= 5"
+    },
+    {
+      "id": "month_master",
+      "icon": "🏆",
+      "title": "Mestre do Mês",
+      "description": "Completou 30 dias de leitura",
+      "condition": "stats?.longestStreak >= 30"
+    }
+  ]
+}

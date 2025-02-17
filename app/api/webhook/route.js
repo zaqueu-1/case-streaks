@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/app/lib/mongodb"
-import News from "@/app/models/News"
-import { verifyWebhook } from "@/app/lib/webhookMiddleware"
-import { calculateLevelFromPoints } from "@/app/utils/utils"
+import connectDB from "../../lib/mongodb"
+import News from "../../models/News"
+import { verifyWebhook } from "../../lib/webhookMiddleware"
+import { calculateLevelFromPoints } from "../../utils/utils"
 
 export async function GET(req) {
   let response = null
