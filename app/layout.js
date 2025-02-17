@@ -23,9 +23,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='pt-BR' suppressHydrationWarning={true}>
+    <html lang='pt-BR'>
       <body
         className={`${montserrat.variable} ${poppins.variable} font-poppins bg-[#F9FAFB]`}
+        suppressHydrationWarning
       >
         <Providers>
           <Header />

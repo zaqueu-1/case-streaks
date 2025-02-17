@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",
+    "html2canvas": "^1.4.1",
     "mongoose": "^8.10.0",
     "next": "15.1.7",
     "next-auth": "^4.24.11",

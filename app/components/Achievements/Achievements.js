@@ -1,11 +1,20 @@
 import achievementsData from "../../data/achievements.json"
+import { useEffect, useMemo } from "react"
 
-export default function Achievements({ stats }) {
-  const achievements = achievementsData.achievements.map((achievement) => ({
-    ...achievement,
-    unlocked:
-      achievement.condition === "true" ? true : eval(achievement.condition),
-  }))
+export default function Achievements({ stats, onAchievementsUpdate }) {
+  const achievements = useMemo(() => {
+    return achievementsData.achievements.map((achievement) => ({
+      ...achievement,
+      unlocked:
+        achievement.condition === "true" ? true : eval(achievement.condition),
+    }))
+  }, [stats])
+
+  useEffect(() => {
+    if (onAchievementsUpdate) {
+      onAchievementsUpdate(achievements)
+    }
+  }, [achievements, onAchievementsUpdate])
 
   return (
     <div className='w-full md:max-w-[70%] mx-auto mt-10'>
@@ -23,9 +32,7 @@ export default function Achievements({ stats }) {
                 <span className='text-3xl'>{achievement.icon}</span>
                 <div className='absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white rounded-full'>
                   <p className='text-xs text-secondary_muted text-center px-3'>
-                    {achievement.unlocked
-                      ? achievement.description
-                      : null}
+                    {achievement.unlocked ? achievement.description : null}
                   </p>
                 </div>
               </div>

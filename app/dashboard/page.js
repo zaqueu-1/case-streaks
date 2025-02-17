@@ -7,6 +7,7 @@ import StatsCard from "../components/StatsCard/StatsCard"
 import LevelBadge from "../components/LevelBadge/LevelBadge"
 import AccessCalendar from "../components/AccessCalendar/AccessCalendar"
 import Achievements from "../components/Achievements/Achievements"
+import ShareButton from "../components/ShareButton/ShareButton"
 import { formatDate, getStreakMessage } from "../utils/utils"
 
 export default function DashboardPage() {
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [achievements, setAchievements] = useState([])
 
   const fetchStats = async () => {
     try {
@@ -72,8 +74,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <Achievements stats={stats} />
-
           <div className='mt-10 flex flex-col gap-8 items-center justify-center sm:flex-row'>
             <StatsCard
               icon={"☕"}
@@ -95,38 +95,15 @@ export default function DashboardPage() {
             />
           </div>
 
+          <Achievements stats={stats} onAchievementsUpdate={setAchievements} />
+
           <div className='w-full mt-10'>
             <AccessCalendar accesses={stats?.recentAccesses || []} />
           </div>
 
-          <div className='mt-8'>
-            <div className='bg-white shadow overflow-hidden sm:rounded-lg border-2 border-primary'>
-              <ul className='divide-y divide-gray-200'>
-                {stats?.recentAccesses?.map((access) => (
-                  <li key={access._id}>
-                    <div className='px-4 py-4 sm:px-6'>
-                      <div className='flex items-center justify-between'>
-                        <p className='text-sm font-medium font-montserrat text-primary truncate'>
-                          {access.id}
-                        </p>
-                        <div className='ml-2 flex-shrink-0 flex'>
-                          <p className='px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-secondary'>
-                            {formatDate(access.timestamp)}
-                          </p>
-                        </div>
-                      </div>
-                      {access.utmSource && (
-                        <div className='mt-2 text-sm font-poppins text-secondary'>
-                          Origem: {access.utmSource} | Meio: {access.utmMedium}{" "}
-                          | Campanha: {access.utmCampaign}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <ShareButton
+            stats={stats}
+          />
         </div>
       </div>
     </div>
