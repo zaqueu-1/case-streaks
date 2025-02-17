@@ -69,7 +69,7 @@ export async function GET(req) {
       news.accesses.push(newAccess)
       news.lastAccess = now
 
-      if (!hasAccessToday) {
+      if (!hasAccessToday && now.getDay() !== 0) {
         news.totalAccesses = (news.totalAccesses || 0) + 1
         news.points = (news.points || 0) + 5
         news.level = calculateLevelFromPoints(news.points)

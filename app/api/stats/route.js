@@ -41,7 +41,7 @@ export async function GET(req) {
 
     const streaks = calculateStreaks(userRecord.accesses)
     const utmStats = calculateUtmStats(userRecord.accesses)
-    const recentAccesses = userRecord.accesses.slice(-10)
+    const recentAccesses = userRecord.accesses
     const nextLevelPoints = calculateRequiredPointsForNextLevel(
       userRecord.level || 1,
     )
@@ -79,8 +79,10 @@ function calculateStreaks(accesses) {
   const uniqueDays = new Set()
   sortedAccesses.forEach((access) => {
     const date = new Date(access.timestamp)
-    const dateString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
-    uniqueDays.add(dateString)
+    if (date.getDay() !== 0) {
+      const dateString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+      uniqueDays.add(dateString)
+    }
   })
 
   const uniqueDatesArray = Array.from(uniqueDays)
@@ -97,6 +99,20 @@ function calculateStreaks(accesses) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const getDaysBetweenDates = (date1, date2) => {
+    const diffTime = Math.abs(date2 - date1)
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+    let sundays = 0
+    const tempDate = new Date(Math.min(date1, date2))
+    while (tempDate <= Math.max(date1, date2)) {
+      if (tempDate.getDay() === 0) sundays++
+      tempDate.setDate(tempDate.getDate() + 1)
+    }
+
+    return diffDays - sundays
+  }
+
   for (let i = 0; i < uniqueDatesArray.length; i++) {
     const currentDate = uniqueDatesArray[i]
     const previousDate = i > 0 ? uniqueDatesArray[i - 1] : null
@@ -104,10 +120,9 @@ function calculateStreaks(accesses) {
     if (i === 0) {
       tempStreak = 1
     } else {
-      const dayDiff = Math.floor(
-        (previousDate - currentDate) / (1000 * 60 * 60 * 24),
-      )
-      if (dayDiff === 1) {
+      const effectiveDayDiff = getDaysBetweenDates(currentDate, previousDate)
+
+      if (effectiveDayDiff === 1) {
         tempStreak++
       } else {
         tempStreak = 1
@@ -118,8 +133,7 @@ function calculateStreaks(accesses) {
 
     if (
       i === 0 ||
-      (previousDate &&
-        Math.floor((today - previousDate) / (1000 * 60 * 60 * 24)) <= 1)
+      (previousDate && getDaysBetweenDates(today, previousDate) <= 1)
     ) {
       currentStreak = tempStreak
     }

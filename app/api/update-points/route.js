@@ -12,12 +12,17 @@ export async function GET() {
     const results = []
 
     for (const user of allUsers) {
-      // Calcula dias únicos
       const uniqueDays = new Set(
-        user.accesses.map((access) => {
-          const date = new Date(access.timestamp)
-          return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
-        }),
+        user.accesses
+          .map((access) => {
+            const date = new Date(access.timestamp)
+            // Ignora domingos no cálculo de pontos
+            if (date.getDay() !== 0) {
+              return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+            }
+            return null
+          })
+          .filter(Boolean),
       )
 
       const points = uniqueDays.size * 5
