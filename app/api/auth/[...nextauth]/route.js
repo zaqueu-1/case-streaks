@@ -14,7 +14,9 @@ const handler = NextAuth({
         try {
           await connectDB()
 
-          const userRecord = await News.findOne({ email: credentials.email })
+          const userRecord = await News.findOne({
+            email: credentials.email,
+          }).lean()
 
           if (!userRecord) {
             throw new Error(
@@ -22,13 +24,15 @@ const handler = NextAuth({
             )
           }
 
-          return {
+          const user = {
             id: credentials.email,
             email: credentials.email,
             name: credentials.email.split("@")[0],
+            isAdmin: userRecord.isAdmin,
           }
+          return user
         } catch (error) {
-          console.error("Erro na autenticação:", error.message)
+          console.error("Erro na autenticação:", error)
           throw error
         }
       },
@@ -42,21 +46,19 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.isAdmin = user.isAdmin
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id
+        session.user.isAdmin = token.isAdmin
       }
       return session
     },
   },
-  debug: process.env.NODE_ENV === "development",
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
+  debug: true,
 })
 
 export { handler as GET, handler as POST }

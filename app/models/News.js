@@ -20,6 +20,11 @@ const newsSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
     accesses: [accessSchema],
     lastAccess: {
       type: Date,
