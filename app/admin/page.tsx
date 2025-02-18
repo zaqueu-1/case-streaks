@@ -4,10 +4,22 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
+interface UpdateResult {
+  message?: string
+  error?: string
+  totalUpdated?: number
+}
+
+interface SessionUser {
+  isAdmin: boolean
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
+  const [updateResult, setUpdateResult] = useState<UpdateResult | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -15,13 +27,27 @@ export default function AdminDashboard() {
       return
     }
 
-    if (status === "authenticated" && !session.user.isAdmin) {
+    if (status === "authenticated" && !session?.user?.isAdmin) {
       router.replace("/dashboard")
       return
     }
 
     setLoading(false)
   }, [status, router, session])
+
+  const handleUpdatePoints = async () => {
+    try {
+      setUpdating(true)
+      const response = await fetch("/api/update-points")
+      const result = await response.json()
+      setUpdateResult(result)
+    } catch (error) {
+      console.error("Erro ao atualizar pontos:", error)
+      setUpdateResult({ error: "Erro ao atualizar pontos" })
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   if (status === "loading" || loading) {
     return (
@@ -43,12 +69,68 @@ export default function AdminDashboard() {
       <div className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>
         <div className='px-4 py-6 sm:px-0'>
           <div className='flex flex-col items-start mb-8'>
-            <h1 className='text-3xl font-bold font-montserrat text-secondary'>
-              Dashboard Administrativo
-            </h1>
-            <p className='text-sm font-poppins text-secondary_muted mt-2'>
-              Acompanhe as métricas dos leitores de nossa newsletter
-            </p>
+            <div className='flex items-center justify-between w-full'>
+              <div>
+                <h1 className='text-3xl font-bold font-montserrat text-secondary'>
+                  Dashboard Administrativo
+                </h1>
+                <p className='text-sm font-poppins text-secondary_muted mt-2'>
+                  Monitore o engajamento dos leitores do the news
+                </p>
+              </div>
+              <button
+                onClick={handleUpdatePoints}
+                disabled={updating}
+                className='px-4 py-2 bg-primary text-secondary rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {updating ? (
+                  <>
+                    <svg
+                      className='animate-spin -ml-1 mr-3 h-5 w-5 text-secondary inline'
+                      xmlns='http://www.w3.org/2000/svg'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                    >
+                      <circle
+                        className='opacity-25'
+                        cx='12'
+                        cy='12'
+                        r='10'
+                        stroke='currentColor'
+                        strokeWidth='4'
+                      ></circle>
+                      <path
+                        className='opacity-75'
+                        fill='currentColor'
+                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                      ></path>
+                    </svg>
+                    Atualizando...
+                  </>
+                ) : (
+                  "Atualizar Pontos e Níveis"
+                )}
+              </button>
+            </div>
+            {updateResult && (
+              <div
+                className={`mt-4 p-4 rounded-lg w-full ${
+                  updateResult.error
+                    ? "bg-red-50 text-red-800"
+                    : "bg-green-50 text-green-800"
+                }`}
+              >
+                {updateResult.error ? (
+                  updateResult.error
+                ) : (
+                  <>
+                    {updateResult.message}
+                    <br />
+                    {updateResult.totalUpdated} usuários atualizados
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className='bg-primary_muted p-4 rounded-lg shadow-lg mb-8'>
@@ -89,9 +171,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Cards de Métricas */}
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'>
-            <div className='bg-primary_muted p-6 rounded-lg shadow-lg '>
+            <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Total de Leitores
               </h3>
@@ -111,7 +192,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Placeholder para Gráficos */}
           <div className='bg-primary_muted p-6 rounded-lg shadow-lg mb-8'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
               Engajamento ao Longo do Tempo
@@ -121,7 +201,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Placeholder para Ranking */}
           <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
               Ranking os Leitores

@@ -4,6 +4,7 @@ import Providers from "./providers"
 import Script from "next/script"
 import Header from "./components/Header"
 import "./healthcheck"
+import { ReactNode } from "react"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -21,7 +22,11 @@ export const metadata = {
   description: "Acompanhe seu streak em nossa newsletter!",
 }
 
-export default function RootLayout({ children }) {
+interface RootLayoutProps {
+  children: ReactNode
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang='pt-BR'>
       <body

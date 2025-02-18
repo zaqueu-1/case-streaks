@@ -1,18 +1,23 @@
+"use client"
+
 import { useRef } from "react"
 import html2canvas from "html2canvas"
+import { ShareButtonProps } from "../../types/components"
 
-export default function ShareButton({ stats }) {
-  const cardRef = useRef(null)
+export default function ShareButton({ stats }: ShareButtonProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const handleShare = async () => {
+    if (!cardRef.current) return
+
     try {
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: "#FFDF53",
         scale: 2,
       })
 
-      const blob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((blob) => resolve(blob!), "image/png"),
       )
       const file = new File([blob], "my-achievements.png", {
         type: "image/png",
@@ -32,6 +37,8 @@ export default function ShareButton({ stats }) {
       console.error("Erro ao compartilhar:", error)
     }
   }
+
+  if (!stats) return null
 
   return (
     <>

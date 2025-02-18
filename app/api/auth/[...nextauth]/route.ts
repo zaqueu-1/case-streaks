@@ -2,8 +2,20 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import connectDB from "../../../lib/mongodb"
 import News from "../../../models/News"
+import { NextAuthOptions } from "next-auth"
 
-const handler = NextAuth({
+interface Credentials {
+  email: string
+}
+
+interface User {
+  id: string
+  email: string
+  name: string
+  isAdmin: boolean
+}
+
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Email",
@@ -12,6 +24,10 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
+          if (!credentials?.email) {
+            throw new Error("Email é obrigatório")
+          }
+
           await connectDB()
 
           const userRecord = await News.findOne({
@@ -24,11 +40,11 @@ const handler = NextAuth({
             )
           }
 
-          const user = {
+          const user: User = {
             id: credentials.email,
             email: credentials.email,
             name: credentials.email.split("@")[0],
-            isAdmin: userRecord.isAdmin,
+            isAdmin: userRecord.isAdmin || false,
           }
           return user
         } catch (error) {
@@ -52,13 +68,15 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id
-        session.user.isAdmin = token.isAdmin
+        session.user.id = token.id as string
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
   },
   debug: true,
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

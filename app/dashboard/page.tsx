@@ -8,18 +8,20 @@ import LevelBadge from "../components/LevelBadge/LevelBadge"
 import AccessCalendar from "../components/AccessCalendar/AccessCalendar"
 import Achievements from "../components/Achievements/Achievements"
 import ShareButton from "../components/ShareButton/ShareButton"
-import { formatDate, getStreakMessage } from "../utils/utils"
+import { getStreakMessage } from "../utils/utils"
+import { StatsResponse } from "../types/news"
+import { Achievement } from "../types/components"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [stats, setStats] = useState(null)
+  const [stats, setStats] = useState<StatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [achievements, setAchievements] = useState([])
+  const [achievements, setAchievements] = useState<Achievement[]>([])
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`/api/stats?email=${session.user.email}`)
+      const response = await fetch(`/api/stats?email=${session?.user?.email}`)
       const data = await response.json()
       setStats(data)
     } catch (error) {
@@ -33,7 +35,7 @@ export default function DashboardPage() {
     if (status === "unauthenticated") {
       router.replace("/login")
     }
-  }, [status, router, session])
+  }, [status, router])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -66,13 +68,15 @@ export default function DashboardPage() {
               <h1 className='text-2xl font-bold font-verdana text-secondary md:text-4xl'>
                 Olá, {session?.user?.email}!
               </h1>
-              {stats?.currentStreak > 0 && (
+              {stats?.currentStreak && stats.currentStreak > 0 && (
                 <p className='text-xs font-verdana text-secondary_muted italic md:text-sm'>
                   {getStreakMessage(stats.currentStreak)}
                 </p>
               )}
             </div>
           </div>
+
+          <Achievements stats={stats} onAchievementsUpdate={setAchievements} />
 
           <div className='mt-10 flex flex-col gap-8 items-center justify-center sm:flex-row'>
             <StatsCard
@@ -95,15 +99,11 @@ export default function DashboardPage() {
             />
           </div>
 
-          <Achievements stats={stats} onAchievementsUpdate={setAchievements} />
-
           <div className='w-full mt-10'>
             <AccessCalendar accesses={stats?.recentAccesses || []} />
           </div>
 
-          <ShareButton
-            stats={stats}
-          />
+          <ShareButton stats={stats} />
         </div>
       </div>
     </div>

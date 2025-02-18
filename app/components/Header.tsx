@@ -3,19 +3,30 @@
 import Image from "next/image"
 import Link from "next/link"
 import { signOut, useSession } from "next-auth/react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const { status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
 
   if (pathname === "/login") return null
 
   const handleSignOut = async () => {
-    setIsLoading(true)
-    await signOut()
+    try {
+      setIsLoading(true)
+      await signOut({
+        redirect: false,
+        callbackUrl: "/login",
+      })
+      router.replace("/login")
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

@@ -1,6 +1,14 @@
-import { useState, useEffect } from "react"
+"use client"
 
-export default function AccessCalendar({ accesses }) {
+import { useState, useEffect } from "react"
+import { AccessCalendarProps } from "../../types/components"
+
+interface WeekDay {
+  key: string
+  label: string
+}
+
+export default function AccessCalendar({ accesses = [] }: AccessCalendarProps) {
   const [currentDate, setCurrentDate] = useState(() => {
     if (accesses?.length > 0) {
       const mostRecentAccess = new Date(accesses[0].timestamp)
@@ -41,7 +49,7 @@ export default function AccessCalendar({ accesses }) {
     "dezembro",
   ]
 
-  const weekDays = [
+  const weekDays: WeekDay[] = [
     { key: "dom", label: "D" },
     { key: "seg", label: "S" },
     { key: "ter", label: "T" },
@@ -75,7 +83,7 @@ export default function AccessCalendar({ accesses }) {
     )
   }
 
-  const isAccessDay = (day) => {
+  const isAccessDay = (day: number): boolean => {
     if (!accesses?.length) return false
 
     const targetDate = new Date(
@@ -130,7 +138,7 @@ export default function AccessCalendar({ accesses }) {
           }`}
         >
           <span>{d}</span>
-          {isAccess && !isSunday && <span className="hidden sm:block">📰</span>}
+          {isAccess && !isSunday && <span className='hidden sm:block'>📰</span>}
         </div>,
       )
     }

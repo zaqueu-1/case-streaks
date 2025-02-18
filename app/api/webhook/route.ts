@@ -3,9 +3,28 @@ import connectDB from "../../lib/mongodb"
 import News from "../../models/News"
 import { verifyWebhook } from "../../lib/webhookMiddleware"
 import { calculateLevelAndPoints } from "../../utils/utils"
+import { Access } from "../../types/news"
 
-export async function GET(req) {
-  let response = null
+interface WebhookResponse {
+  message: string
+  data?: {
+    email: string
+    totalAccesses: number
+    lastAccess: Date
+    currentAccess: Access
+    points: number
+    level: number
+    pointsToNextLevel: number
+    currentLevelPoints: number
+  }
+  error?: string
+  retryable?: boolean
+}
+
+export async function GET(
+  req: Request,
+): Promise<NextResponse<WebhookResponse>> {
+  let response: NextResponse<WebhookResponse> | null = null
 
   try {
     await verifyWebhook(req)
@@ -23,7 +42,7 @@ export async function GET(req) {
         {
           error: "Parâmetros inválidos",
           required: ["email", "id"],
-        },
+        } as WebhookResponse,
         { status: 400 },
       )
       return response
@@ -42,13 +61,13 @@ export async function GET(req) {
       spNow.getDate(),
     )
 
-    const newAccess = {
+    const newAccess: Access = {
       id: normalizedId,
       timestamp: now,
-      utmSource,
-      utmMedium,
-      utmCampaign,
-      utmChannel,
+      utmSource: utmSource || undefined,
+      utmMedium: utmMedium || undefined,
+      utmCampaign: utmCampaign || undefined,
+      utmChannel: utmChannel || undefined,
     }
 
     let news = await News.findOne({ email })
@@ -59,7 +78,7 @@ export async function GET(req) {
         accesses: [newAccess],
         lastAccess: now,
         createdAt: now,
-        points: spNow.getDay() !== 0 ? 5 : 0, // 5 pontos se não for domingo
+        points: spNow.getDay() !== 0 ? 5 : 0,
       })
     } else {
       const hasAccessToday = news.accesses.some((access) => {
@@ -78,8 +97,7 @@ export async function GET(req) {
       news.lastAccess = now
 
       if (!hasAccessToday && spNow.getDay() !== 0) {
-        // Recalcula pontos baseado em dias únicos de acesso (excluindo domingos)
-        const uniqueDays = new Set()
+        const uniqueDays = new Set<string>()
         news.accesses.forEach((access) => {
           const date = new Date(access.timestamp)
           const spDate = new Date(
@@ -125,12 +143,13 @@ export async function GET(req) {
   } catch (error) {
     console.error("Erro ao processar webhook:", error)
 
-    const statusCode = error.message.includes("tentativas") ? 429 : 500
+    const statusCode =
+      error instanceof Error && error.message.includes("tentativas") ? 429 : 500
 
     response = NextResponse.json(
       {
         error: "Erro ao processar webhook",
-        message: error.message,
+        message: error instanceof Error ? error.message : "Erro desconhecido",
         retryable: statusCode === 500,
       },
       { status: statusCode },

@@ -134,15 +134,24 @@ function calculateStreaks(accesses) {
 
     if (daysBetween === 1) {
       tempStreak++
+      if (i === 0 && isCurrentStreakValid) {
+        currentStreak = tempStreak
+      }
     } else {
       longestStreak = Math.max(longestStreak, tempStreak)
+      if (i === 0 && isCurrentStreakValid) {
+        currentStreak = 1
+      }
       tempStreak = 1
     }
   }
 
   longestStreak = Math.max(longestStreak, tempStreak)
-
-  currentStreak = isCurrentStreakValid ? tempStreak : 0
+  if (isCurrentStreakValid) {
+    currentStreak = Math.max(currentStreak, tempStreak)
+  } else {
+    currentStreak = 0
+  }
 
   return { currentStreak, longestStreak }
 }

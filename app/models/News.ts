@@ -1,6 +1,7 @@
-import mongoose from "mongoose"
+import mongoose, { Schema } from "mongoose"
+import { INews } from "../types/news"
 
-const accessSchema = new mongoose.Schema({
+const accessSchema = new Schema({
   id: String,
   timestamp: {
     type: Date,
@@ -12,7 +13,7 @@ const accessSchema = new mongoose.Schema({
   utmChannel: String,
 })
 
-const newsSchema = new mongoose.Schema(
+const newsSchema = new Schema<INews>(
   {
     email: {
       type: String,
@@ -52,7 +53,7 @@ const newsSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 )
 
 newsSchema.index({ createdAt: -1 })
@@ -74,4 +75,4 @@ mongoose.connection.on("connected", async () => {
   }
 })
 
-export default mongoose.models.News || mongoose.model("News", newsSchema)
+export default mongoose.models.News || mongoose.model<INews>("News", newsSchema) 

@@ -1,7 +1,8 @@
 import { getToken } from "next-auth/jwt"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-export async function middleware(request) {
+export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request })
   const isAuthenticated = !!token
   const isAdmin = token?.isAdmin || false
@@ -11,37 +12,36 @@ export async function middleware(request) {
   const isAdminPath = pathname === "/admin"
   const isDashboardPath = pathname === "/dashboard"
 
-  console.log("Token:", token)
-  console.log("Is Admin:", isAdmin)
-  console.log("Current Path:", pathname)
-
-  // Webhook redirect
   if (pathname === "/" && searchParams.has("email") && searchParams.has("id")) {
     return NextResponse.redirect(
       new URL(`/api/webhook?${searchParams.toString()}`, request.url),
     )
   }
 
-  // Auth checks
   if (!isAuthenticated && !isPublicPath) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    const url = new URL("/login", request.url)
+    url.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(url)
   }
 
-  // Admin access
+  if (isAuthenticated && isPublicPath) {
+    return NextResponse.redirect(
+      new URL(isAdmin ? "/admin" : "/dashboard", request.url),
+    )
+  }
+
   if (isAuthenticated && isAdmin && isDashboardPath) {
     return NextResponse.redirect(new URL("/admin", request.url))
   }
 
-  // Non-admin access
   if (isAuthenticated && !isAdmin && isAdminPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  // Public path redirect
-  if (isAuthenticated && isPublicPath) {
-    return isAdmin
-      ? NextResponse.redirect(new URL("/admin", request.url))
-      : NextResponse.redirect(new URL("/dashboard", request.url))
+  if (pathname === "/") {
+    return NextResponse.redirect(
+      new URL(isAdmin ? "/admin" : "/dashboard", request.url),
+    )
   }
 
   return NextResponse.next()

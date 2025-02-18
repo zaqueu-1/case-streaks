@@ -1,8 +1,20 @@
-import achievementsData from "../../data/achievements.json"
-import { useEffect, useMemo } from "react"
+"use client"
 
-export default function Achievements({ stats, onAchievementsUpdate }) {
+import { useEffect, useMemo } from "react"
+import achievementsData from "../../data/achievements.json"
+import { Achievement, AchievementsProps } from "../../types/components"
+
+export default function Achievements({
+  stats,
+  onAchievementsUpdate,
+}: AchievementsProps) {
   const achievements = useMemo(() => {
+    if (!stats)
+      return achievementsData.achievements.map((achievement) => ({
+        ...achievement,
+        unlocked: false,
+      }))
+
     return achievementsData.achievements.map((achievement) => ({
       ...achievement,
       unlocked:
@@ -17,7 +29,7 @@ export default function Achievements({ stats, onAchievementsUpdate }) {
   }, [achievements, onAchievementsUpdate])
 
   return (
-    <div className='w-full md:max-w-[70%] mx-auto mt-10'>
+    <div className='w-full md:max-w-[65%] mx-auto mt-10'>
       <div className='overflow-hidden'>
         <div className='p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2'>
           {achievements.map((achievement) => (
