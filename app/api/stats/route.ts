@@ -2,8 +2,12 @@ import { NextResponse } from "next/server"
 import connectDB from "../../lib/mongodb"
 import News from "../../models/News"
 import { calculateLevelAndPoints } from "../../utils/utils"
+import { INews, Access, StatsResponse, UtmStats } from "../../types/news"
+import { NextRequest } from "next/server"
 
-export async function GET(req) {
+export async function GET(
+  req: NextRequest,
+): Promise<NextResponse<StatsResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(req.url)
     const email = searchParams.get("email")
@@ -17,7 +21,7 @@ export async function GET(req) {
 
     await connectDB()
 
-    const userRecord = await News.findOne({ email })
+    const userRecord = (await News.findOne({ email })
       .select({
         email: 1,
         lastAccess: 1,
@@ -25,7 +29,7 @@ export async function GET(req) {
         accesses: 1,
         points: 1,
       })
-      .lean()
+      .lean()) as INews | null
 
     if (!userRecord) {
       return NextResponse.json(
@@ -62,14 +66,19 @@ export async function GET(req) {
   }
 }
 
-function calculateStreaks(accesses) {
+interface StreakResult {
+  currentStreak: number
+  longestStreak: number
+}
+
+function calculateStreaks(accesses: Access[]): StreakResult {
   if (!accesses?.length) return { currentStreak: 0, longestStreak: 0 }
 
   const sortedAccesses = accesses.sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   )
 
-  const uniqueDays = new Set()
+  const uniqueDays = new Set<string>()
   sortedAccesses.forEach((access) => {
     const date = new Date(access.timestamp)
     const spDate = new Date(
@@ -83,10 +92,10 @@ function calculateStreaks(accesses) {
 
   const uniqueDatesArray = Array.from(uniqueDays)
     .map((dateString) => {
-      const [year, month, day] = dateString.split("-")
+      const [year, month, day] = dateString.split("-").map(Number)
       return new Date(year, month, day)
     })
-    .sort((a, b) => b - a)
+    .sort((a, b) => b.getTime() - a.getTime())
 
   if (uniqueDatesArray.length === 0) {
     return { currentStreak: 0, longestStreak: 0 }
@@ -102,7 +111,7 @@ function calculateStreaks(accesses) {
   )
   spNow.setHours(0, 0, 0, 0)
 
-  const getDaysBetweenDates = (date1, date2) => {
+  const getDaysBetweenDates = (date1: Date, date2: Date): number => {
     const d1 = new Date(date1)
     const d2 = new Date(date2)
     const start = d1 < d2 ? d1 : d2
@@ -126,40 +135,44 @@ function calculateStreaks(accesses) {
   const daysSinceLastAccess = getDaysBetweenDates(lastAccessDate, spNow)
   const isCurrentStreakValid = daysSinceLastAccess === 0
 
+  let hasStreakBreak = false
   for (let i = 0; i < uniqueDatesArray.length - 1; i++) {
     const currentDate = uniqueDatesArray[i]
     const nextDate = uniqueDatesArray[i + 1]
-
     const daysBetween = getDaysBetweenDates(nextDate, currentDate)
 
     if (daysBetween === 1) {
       tempStreak++
-      if (i === 0 && isCurrentStreakValid) {
-        currentStreak = tempStreak
-      }
     } else {
-      longestStreak = Math.max(longestStreak, tempStreak)
-      if (i === 0 && isCurrentStreakValid) {
-        currentStreak = 1
+      if (i === 0 && daysBetween > 1) {
+        hasStreakBreak = true
       }
+      longestStreak = Math.max(longestStreak, tempStreak)
       tempStreak = 1
     }
   }
 
   longestStreak = Math.max(longestStreak, tempStreak)
-  if (isCurrentStreakValid) {
-    currentStreak = Math.max(currentStreak, tempStreak)
+
+  if (hasStreakBreak) {
+    currentStreak = isCurrentStreakValid ? 1 : 0
   } else {
-    currentStreak = 0
+    currentStreak = isCurrentStreakValid ? tempStreak : 0
   }
 
   return { currentStreak, longestStreak }
 }
 
-function calculateUtmStats(accesses) {
-  if (!accesses?.length) return {}
+function calculateUtmStats(accesses: Access[]): UtmStats {
+  if (!accesses?.length)
+    return {
+      sources: {},
+      mediums: {},
+      campaigns: {},
+      channels: {},
+    }
 
-  const stats = {
+  const stats: UtmStats = {
     sources: {},
     mediums: {},
     campaigns: {},

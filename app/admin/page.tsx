@@ -8,14 +8,32 @@ interface UpdateResult {
   message?: string
   error?: string
   totalUpdated?: number
+  details?: Array<{
+    email: string
+    uniqueDays: number
+    points: number
+    level: number
+    pointsToNextLevel: number
+    currentLevelPoints: number
+    totalAccesses: number
+    success: boolean
+  }>
 }
 
-interface SessionUser {
-  isAdmin: boolean
+interface CustomSession {
+  user?: {
+    id?: string
+    email?: string | null
+    name?: string | null
+    isAdmin?: boolean
+  }
 }
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSession() as {
+    data: CustomSession | null
+    status: "loading" | "authenticated" | "unauthenticated"
+  }
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)

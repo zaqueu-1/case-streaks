@@ -3,16 +3,24 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import connectDB from "../../../lib/mongodb"
 import News from "../../../models/News"
 import { NextAuthOptions } from "next-auth"
+import { JWT } from "next-auth/jwt"
+import { INews } from "../../../types/news"
+import { Session } from "next-auth"
 
-interface Credentials {
-  email: string
-}
-
-interface User {
+interface CustomUser {
   id: string
   email: string
   name: string
   isAdmin: boolean
+}
+
+interface CustomSession extends Session {
+  user: {
+    id: string
+    email: string | null
+    name: string | null
+    isAdmin: boolean
+  }
 }
 
 const authOptions: NextAuthOptions = {
@@ -22,7 +30,7 @@ const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<CustomUser | null> {
         try {
           if (!credentials?.email) {
             throw new Error("Email é obrigatório")
@@ -30,9 +38,9 @@ const authOptions: NextAuthOptions = {
 
           await connectDB()
 
-          const userRecord = await News.findOne({
+          const userRecord = (await News.findOne({
             email: credentials.email,
-          }).lean()
+          }).lean()) as INews | null
 
           if (!userRecord) {
             throw new Error(
@@ -40,7 +48,7 @@ const authOptions: NextAuthOptions = {
             )
           }
 
-          const user: User = {
+          const user: CustomUser = {
             id: credentials.email,
             email: credentials.email,
             name: credentials.email.split("@")[0],
@@ -59,19 +67,23 @@ const authOptions: NextAuthOptions = {
     error: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }): Promise<JWT & { isAdmin?: boolean }> {
       if (user) {
         token.id = user.id
-        token.isAdmin = user.isAdmin
+        token.isAdmin = (user as CustomUser).isAdmin
       }
       return token
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.isAdmin = token.isAdmin as boolean
+    async session({ session, token }): Promise<CustomSession> {
+      return {
+        ...session,
+        user: {
+          id: token.id as string,
+          email: session.user?.email || null,
+          name: session.user?.name || null,
+          isAdmin: token.isAdmin as boolean,
+        },
       }
-      return session
     },
   },
   debug: true,
