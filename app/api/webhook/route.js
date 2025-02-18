@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import connectDB from "../../lib/mongodb"
 import News from "../../models/News"
 import { verifyWebhook } from "../../lib/webhookMiddleware"
-import { calculateLevelFromPoints } from "../../utils/utils"
+import { calculateLevelAndPoints } from "../../utils/utils"
 
 export async function GET(req) {
   let response = null
@@ -33,7 +33,14 @@ export async function GET(req) {
 
     const normalizedId = id.startsWith("post_") ? id : `post_${id}`
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const spNow = new Date(
+      now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+    )
+    const today = new Date(
+      spNow.getFullYear(),
+      spNow.getMonth(),
+      spNow.getDate(),
+    )
 
     const newAccess = {
       id: normalizedId,
@@ -52,49 +59,65 @@ export async function GET(req) {
         accesses: [newAccess],
         lastAccess: now,
         createdAt: now,
-        totalAccesses: 1,
-        points: 5,
-        level: 1,
+        points: spNow.getDay() !== 0 ? 5 : 0, // 5 pontos se não for domingo
       })
     } else {
       const hasAccessToday = news.accesses.some((access) => {
         const accessDate = new Date(access.timestamp)
+        const spAccessDate = new Date(
+          accessDate.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+        )
         return (
-          accessDate.getFullYear() === today.getFullYear() &&
-          accessDate.getMonth() === today.getMonth() &&
-          accessDate.getDate() === today.getDate()
+          spAccessDate.getFullYear() === today.getFullYear() &&
+          spAccessDate.getMonth() === today.getMonth() &&
+          spAccessDate.getDate() === today.getDate()
         )
       })
 
       news.accesses.push(newAccess)
       news.lastAccess = now
 
-      if (!hasAccessToday && now.getDay() !== 0) {
-        news.totalAccesses = (news.totalAccesses || 0) + 1
-        news.points = (news.points || 0) + 5
-        news.level = calculateLevelFromPoints(news.points)
+      if (!hasAccessToday && spNow.getDay() !== 0) {
+        // Recalcula pontos baseado em dias únicos de acesso (excluindo domingos)
+        const uniqueDays = new Set()
+        news.accesses.forEach((access) => {
+          const date = new Date(access.timestamp)
+          const spDate = new Date(
+            date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+          )
+          if (spDate.getDay() !== 0) {
+            const dateString = `${spDate.getFullYear()}-${spDate.getMonth()}-${spDate.getDate()}`
+            uniqueDays.add(dateString)
+          }
+        })
+
+        news.points = uniqueDays.size * 5
       }
     }
 
+    const levelInfo = calculateLevelAndPoints(news.points)
+    news.level = levelInfo.level
+
     await news.save()
 
-    const totalAccesses = news.totalAccesses
-    const nextLevelPoints = news.level * 5 + 5
+    try {
+      await fetch(`${process.env.NEXTAUTH_URL}/api/update-points`)
+    } catch (error) {
+      console.error("Erro ao atualizar pontos:", error)
+    }
 
     response = NextResponse.json(
       {
-        message:
-          totalAccesses === 1
-            ? "Primeiro acesso registrado"
-            : `${totalAccesses}º acesso registrado`,
+        message: "Acesso registrado com sucesso",
         data: {
           email: news.email,
-          totalAccesses,
+          totalAccesses: news.accesses.length,
           lastAccess: news.lastAccess,
           currentAccess: newAccess,
           points: news.points,
-          level: news.level,
-          pointsToNextLevel: nextLevelPoints - news.points,
+          level: levelInfo.level,
+          pointsToNextLevel: levelInfo.pointsToNextLevel,
+          currentLevelPoints: levelInfo.currentLevelPoints,
         },
       },
       { status: 200 },

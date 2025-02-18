@@ -1,41 +1,42 @@
 import { NextResponse } from "next/server"
 import connectDB from "../../lib/mongodb"
-import { calculateLevelFromPoints } from "../../utils/utils"
+import { calculateLevelAndPoints } from "../../utils/utils"
 import mongoose from "mongoose"
 
 export async function GET() {
   try {
-    const db = await connectDB()
+    await connectDB()
     const collection = mongoose.connection.collection("news")
-
     const allUsers = await collection.find({}).toArray()
     const results = []
 
     for (const user of allUsers) {
-      const uniqueDays = new Set(
-        user.accesses
-          .map((access) => {
-            const date = new Date(access.timestamp)
-            // Ignora domingos no cálculo de pontos
-            if (date.getDay() !== 0) {
-              return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
-            }
-            return null
-          })
-          .filter(Boolean),
-      )
+      const uniqueDays = new Set()
+      user.accesses.forEach((access) => {
+        const date = new Date(access.timestamp)
+        const spDate = new Date(
+          date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+        )
+        if (spDate.getDay() !== 0) {
+          // Ignora domingos
+          const dateString = `${spDate.getFullYear()}-${spDate.getMonth()}-${spDate.getDate()}`
+          uniqueDays.add(dateString)
+        }
+      })
 
       const points = uniqueDays.size * 5
-      const level = calculateLevelFromPoints(points)
+      const levelInfo = calculateLevelAndPoints(points)
 
       const updateResult = await collection.updateOne(
         { _id: user._id },
-        { $set: { points, level } },
+        {
+          $set: {
+            points,
+            level: levelInfo.level,
+            totalAccesses: user.accesses.length,
+          },
+        },
       )
-
-      if (updateResult.modifiedCount !== 1) {
-        console.error(`Falha ao atualizar ${user.email}`)
-      }
 
       const updatedUser = await collection.findOne({ _id: user._id })
 
@@ -43,15 +44,18 @@ export async function GET() {
         email: user.email,
         uniqueDays: uniqueDays.size,
         points,
-        level,
-        success: updatedUser.points === points && updatedUser.level === level,
-        actualPoints: updatedUser.points,
-        actualLevel: updatedUser.level,
+        level: levelInfo.level,
+        pointsToNextLevel: levelInfo.pointsToNextLevel,
+        currentLevelPoints: levelInfo.currentLevelPoints,
+        totalAccesses: user.accesses.length,
+        success:
+          updatedUser.points === points &&
+          updatedUser.level === levelInfo.level,
       })
     }
 
     return NextResponse.json({
-      message: "Pontos atualizados com sucesso",
+      message: "Pontos e níveis atualizados com sucesso",
       totalUpdated: results.filter((r) => r.success).length,
       details: results,
     })
@@ -61,7 +65,6 @@ export async function GET() {
       {
         error: "Erro ao atualizar pontos",
         message: error.message,
-        stack: error.stack,
       },
       { status: 500 },
     )

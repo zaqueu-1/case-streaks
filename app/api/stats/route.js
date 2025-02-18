@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 import connectDB from "../../lib/mongodb"
 import News from "../../models/News"
-
-function calculateRequiredPointsForNextLevel(currentLevel) {
-  return currentLevel * 5 + 5
-}
+import { calculateLevelAndPoints } from "../../utils/utils"
 
 export async function GET(req) {
   try {
@@ -23,12 +20,10 @@ export async function GET(req) {
     const userRecord = await News.findOne({ email })
       .select({
         email: 1,
-        totalAccesses: 1,
         lastAccess: 1,
         createdAt: 1,
         accesses: 1,
         points: 1,
-        level: 1,
       })
       .lean()
 
@@ -42,9 +37,7 @@ export async function GET(req) {
     const streaks = calculateStreaks(userRecord.accesses)
     const utmStats = calculateUtmStats(userRecord.accesses)
     const recentAccesses = userRecord.accesses
-    const nextLevelPoints = calculateRequiredPointsForNextLevel(
-      userRecord.level || 1,
-    )
+    const levelInfo = calculateLevelAndPoints(userRecord.points || 0)
 
     return NextResponse.json({
       email: userRecord.email,
@@ -54,9 +47,9 @@ export async function GET(req) {
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
       points: userRecord.points || 0,
-      level: userRecord.level || 1,
-      nextLevelPoints,
-      pointsToNextLevel: nextLevelPoints - (userRecord.points || 0),
+      level: levelInfo.level,
+      pointsToNextLevel: levelInfo.pointsToNextLevel,
+      currentLevelPoints: levelInfo.currentLevelPoints,
       utmStats,
       recentAccesses,
     })
@@ -79,8 +72,11 @@ function calculateStreaks(accesses) {
   const uniqueDays = new Set()
   sortedAccesses.forEach((access) => {
     const date = new Date(access.timestamp)
-    if (date.getDay() !== 0) {
-      const dateString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+    const spDate = new Date(
+      date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+    )
+    if (spDate.getDay() !== 0) {
+      const dateString = `${spDate.getFullYear()}-${spDate.getMonth()}-${spDate.getDate()}`
       uniqueDays.add(dateString)
     }
   })
@@ -92,52 +88,61 @@ function calculateStreaks(accesses) {
     })
     .sort((a, b) => b - a)
 
-  let currentStreak = 0
-  let longestStreak = 0
-  let tempStreak = 0
+  if (uniqueDatesArray.length === 0) {
+    return { currentStreak: 0, longestStreak: 0 }
+  }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  let currentStreak = 1
+  let longestStreak = 1
+  let tempStreak = 1
+
+  const now = new Date()
+  const spNow = new Date(
+    now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
+  )
+  spNow.setHours(0, 0, 0, 0)
 
   const getDaysBetweenDates = (date1, date2) => {
-    const diffTime = Math.abs(date2 - date1)
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    const d1 = new Date(date1)
+    const d2 = new Date(date2)
+    const start = d1 < d2 ? d1 : d2
+    const end = d1 < d2 ? d2 : d1
+    let days = 0
 
-    let sundays = 0
-    const tempDate = new Date(Math.min(date1, date2))
-    while (tempDate <= Math.max(date1, date2)) {
-      if (tempDate.getDay() === 0) sundays++
-      tempDate.setDate(tempDate.getDate() + 1)
-    }
+    const current = new Date(start)
+    current.setDate(current.getDate() + 1)
 
-    return diffDays - sundays
-  }
-
-  for (let i = 0; i < uniqueDatesArray.length; i++) {
-    const currentDate = uniqueDatesArray[i]
-    const previousDate = i > 0 ? uniqueDatesArray[i - 1] : null
-
-    if (i === 0) {
-      tempStreak = 1
-    } else {
-      const effectiveDayDiff = getDaysBetweenDates(currentDate, previousDate)
-
-      if (effectiveDayDiff === 1) {
-        tempStreak++
-      } else {
-        tempStreak = 1
+    while (current <= end) {
+      if (current.getDay() !== 0) {
+        days++
       }
+      current.setDate(current.getDate() + 1)
     }
 
-    longestStreak = Math.max(longestStreak, tempStreak)
+    return days
+  }
 
-    if (
-      i === 0 ||
-      (previousDate && getDaysBetweenDates(today, previousDate) <= 1)
-    ) {
-      currentStreak = tempStreak
+  const lastAccessDate = uniqueDatesArray[0]
+  const daysSinceLastAccess = getDaysBetweenDates(lastAccessDate, spNow)
+  const isCurrentStreakValid = daysSinceLastAccess === 0
+
+  for (let i = 0; i < uniqueDatesArray.length - 1; i++) {
+    const currentDate = uniqueDatesArray[i]
+    const nextDate = uniqueDatesArray[i + 1]
+
+    const daysBetween = getDaysBetweenDates(nextDate, currentDate)
+
+    if (daysBetween === 1) {
+      tempStreak++
+    } else {
+      longestStreak = Math.max(longestStreak, tempStreak)
+      tempStreak = 1
     }
   }
+
+  longestStreak = Math.max(longestStreak, tempStreak)
+
+  currentStreak = isCurrentStreakValid ? tempStreak : 0
 
   return { currentStreak, longestStreak }
 }

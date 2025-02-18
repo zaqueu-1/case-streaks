@@ -42,18 +42,16 @@ export default function AdminDashboard() {
     <div className='min-h-screen bg-background'>
       <div className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>
         <div className='px-4 py-6 sm:px-0'>
-          {/* Header */}
           <div className='flex flex-col items-start mb-8'>
             <h1 className='text-3xl font-bold font-montserrat text-secondary'>
               Dashboard Administrativo
             </h1>
             <p className='text-sm font-poppins text-secondary_muted mt-2'>
-              Monitore o engajamento dos leitores do the news
+              Acompanhe as métricas dos leitores de nossa newsletter
             </p>
           </div>
 
-          {/* Filtros */}
-          <div className='bg-white p-4 rounded-lg shadow-lg border-2 border-primary mb-8'>
+          <div className='bg-primary_muted p-4 rounded-lg shadow-lg mb-8'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
               Filtros
             </h2>
@@ -92,39 +90,29 @@ export default function AdminDashboard() {
           </div>
 
           {/* Cards de Métricas */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'>
-            {/* Total de Leitores */}
-            <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'>
+            <div className='bg-primary_muted p-6 rounded-lg shadow-lg '>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Total de Leitores
               </h3>
               <p className='text-3xl font-bold text-secondary mt-2'>-</p>
             </div>
-            {/* Média de Streak */}
-            <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary'>
+            <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Média de Streak
               </h3>
               <p className='text-3xl font-bold text-secondary mt-2'>-</p>
             </div>
-            {/* Leitores Ativos */}
-            <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary'>
+            <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Leitores Ativos
-              </h3>
-              <p className='text-3xl font-bold text-secondary mt-2'>-</p>
-            </div>
-            {/* Taxa de Engajamento */}
-            <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary'>
-              <h3 className='text-sm font-medium text-secondary_muted'>
-                Taxa de Engajamento
               </h3>
               <p className='text-3xl font-bold text-secondary mt-2'>-</p>
             </div>
           </div>
 
           {/* Placeholder para Gráficos */}
-          <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary mb-8'>
+          <div className='bg-primary_muted p-6 rounded-lg shadow-lg mb-8'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
               Engajamento ao Longo do Tempo
             </h2>
@@ -134,9 +122,9 @@ export default function AdminDashboard() {
           </div>
 
           {/* Placeholder para Ranking */}
-          <div className='bg-white p-6 rounded-lg shadow-lg border-2 border-primary'>
+          <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
-              Top Leitores
+              Ranking os Leitores
             </h2>
             <div className='h-64 flex items-center justify-center bg-gray-50 rounded-lg'>
               <p className='text-secondary_muted'>Ranking em breve</p>

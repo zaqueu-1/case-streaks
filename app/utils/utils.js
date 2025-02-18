@@ -1,32 +1,39 @@
 import streakMessages from "../data/streak-messages.json"
 
-export function calculateLevelProgress(points, level) {
-  const currentLevelMinPoints =
-    level === 1 ? 0 : calculateTotalPointsForLevel(level - 1)
-  const nextLevelPoints = level * 5 + 5
-  const currentLevelPoints = points - currentLevelMinPoints
-
-  return Math.min((currentLevelPoints / nextLevelPoints) * 100, 100)
+function calculateRequiredPointsForNextLevel(level) {
+  return level * 5 + 5
 }
 
-function calculateTotalPointsForLevel(targetLevel) {
-  let totalPoints = 0
-  for (let level = 1; level < targetLevel; level++) {
-    totalPoints += level * 5 + 5
-  }
-  return totalPoints
-}
-
-export function calculateLevelFromPoints(points) {
+export function calculateLevelAndPoints(totalPoints) {
   let level = 1
-  let pointsRequired = 10
+  let remainingPoints = totalPoints
 
-  while (points >= pointsRequired) {
+  while (true) {
+    const pointsForNextLevel = calculateRequiredPointsForNextLevel(level)
+    if (remainingPoints < pointsForNextLevel) {
+      break
+    }
+    remainingPoints -= pointsForNextLevel
     level++
-    pointsRequired += level * 5 + 5
   }
 
-  return level
+  return {
+    level,
+    currentLevelPoints: remainingPoints,
+    pointsToNextLevel:
+      calculateRequiredPointsForNextLevel(level) - remainingPoints,
+  }
+}
+
+export function calculateLevelFromPoints(totalPoints) {
+  return calculateLevelAndPoints(totalPoints).level
+}
+
+export function calculateLevelProgress(totalPoints) {
+  const { currentLevelPoints, pointsToNextLevel } =
+    calculateLevelAndPoints(totalPoints)
+  const totalPointsForLevel = currentLevelPoints + pointsToNextLevel
+  return Math.min((currentLevelPoints / totalPointsForLevel) * 100, 100)
 }
 
 export function formatDate(dateString) {
