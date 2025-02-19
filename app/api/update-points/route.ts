@@ -1,53 +1,70 @@
 import { NextResponse } from "next/server"
-import connectDB from "../../lib/mongodb"
-import mongoose from "mongoose"
+import { query } from "../../lib/postgres"
 import { calculateLevelAndPoints } from "../../utils/utils"
 
-export async function GET() {
+interface UpdateResult {
+  message?: string
+  error?: string
+  totalUpdated?: number
+  details?: Array<{
+    email: string
+    uniqueDays: number
+    points: number
+    level: number
+    pointsToNextLevel: number
+    currentLevelPoints: number
+    totalAccesses: number
+    success: boolean
+  }>
+}
+
+export async function GET(): Promise<NextResponse<UpdateResult>> {
   try {
-    await connectDB()
-    const collection = mongoose.connection.collection("news")
-    const allUsers = await collection.find({}).toArray()
+    // Buscar todos os usuários
+    const usersResult = await query("SELECT * FROM users")
     const results = []
 
-    for (const user of allUsers) {
-      const uniqueDays = new Set()
-      user.accesses.forEach((access) => {
-        const date = new Date(access.timestamp)
-        const spDate = new Date(
-          date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }),
-        )
-        if (spDate.getDay() !== 0) {
-          // Ignora domingos
-          const dateString = `${spDate.getFullYear()}-${spDate.getMonth()}-${spDate.getDate()}`
-          uniqueDays.add(dateString)
-        }
-      })
-
-      const points = uniqueDays.size * 5
-      const levelInfo = calculateLevelAndPoints(points)
-
-      const updateResult = await collection.updateOne(
-        { _id: user._id },
-        {
-          $set: {
-            points,
-            level: levelInfo.level,
-            totalAccesses: user.accesses.length,
-          },
-        },
+    for (const user of usersResult.rows) {
+      // Contar dias únicos de acesso (excluindo domingos)
+      const uniqueDaysResult = await query(
+        `SELECT COUNT(DISTINCT DATE(timestamp)) as unique_days
+         FROM accesses
+         WHERE user_id = $1
+         AND EXTRACT(DOW FROM timestamp) != 0`,
+        [user.id],
       )
 
-      const updatedUser = await collection.findOne({ _id: user._id })
+      const uniqueDays = parseInt(uniqueDaysResult.rows[0].unique_days)
+      const points = uniqueDays * 5
+      const levelInfo = calculateLevelAndPoints(points)
+
+      // Atualizar pontos e nível do usuário
+      const updateResult = await query(
+        `UPDATE users
+         SET points = $1,
+             level = $2,
+             total_accesses = (
+               SELECT COUNT(*) FROM accesses WHERE user_id = $3
+             )
+         WHERE id = $3
+         RETURNING *`,
+        [points, levelInfo.level, user.id],
+      )
+
+      const updatedUser = updateResult.rows[0]
+      const totalAccesses = await query(
+        "SELECT COUNT(*) as count FROM accesses WHERE user_id = $1",
+        [user.id],
+      ).then((res) => parseInt(res.rows[0].count))
 
       results.push({
         email: user.email,
-        uniqueDays: uniqueDays.size,
+        uniqueDays,
         points,
         level: levelInfo.level,
         pointsToNextLevel: levelInfo.pointsToNextLevel,
         currentLevelPoints: levelInfo.currentLevelPoints,
-        totalAccesses: user.accesses.length,
+        totalAccesses,
         success:
           updatedUser.points === points &&
           updatedUser.level === levelInfo.level,
@@ -64,7 +81,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error: "Erro ao atualizar pontos",
-        message: error.message,
+        message: error instanceof Error ? error.message : "Erro desconhecido",
       },
       { status: 500 },
     )

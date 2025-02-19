@@ -1,28 +1,15 @@
 import streakMessages from "../data/streak-messages.json"
 import { LevelInfo } from "../types/news"
 
-function calculateRequiredPointsForNextLevel(level: number): number {
-  return level * 5 + 5
-}
-
 export function calculateLevelAndPoints(totalPoints: number): LevelInfo {
-  let level = 1
-  let remainingPoints = totalPoints
-
-  while (true) {
-    const pointsForNextLevel = calculateRequiredPointsForNextLevel(level)
-    if (remainingPoints < pointsForNextLevel) {
-      break
-    }
-    remainingPoints -= pointsForNextLevel
-    level++
-  }
+  const level = Math.floor(totalPoints / 10) + 1
+  const currentLevelPoints = totalPoints % 10
+  const pointsToNextLevel = 10 - currentLevelPoints
 
   return {
     level,
-    currentLevelPoints: remainingPoints,
-    pointsToNextLevel:
-      calculateRequiredPointsForNextLevel(level) - remainingPoints,
+    currentLevelPoints,
+    pointsToNextLevel,
   }
 }
 

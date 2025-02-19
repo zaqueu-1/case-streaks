@@ -2,20 +2,22 @@ import { Document } from "mongoose"
 
 export interface Access {
   id: string
+  user_id: string
+  post_id: string
   timestamp: Date
-  utmSource?: string
-  utmMedium?: string
-  utmCampaign?: string
-  utmChannel?: string
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_channel?: string
 }
 
-export interface INews extends Document {
+export interface User {
+  id: string
   email: string
-  isAdmin: boolean
-  accesses: Access[]
-  lastAccess: Date
-  createdAt: Date
-  totalAccesses: number
+  is_admin: boolean
+  last_access: Date
+  created_at: Date
+  total_accesses: number
   points: number
   level: number
 }
@@ -46,4 +48,4 @@ export interface StatsResponse {
   currentLevelPoints: number
   utmStats: UtmStats
   recentAccesses: Access[]
-} 
+}

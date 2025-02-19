@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import connectDB from "../../lib/mongodb"
+import { query } from "../../lib/postgres"
 
 interface HealthCheckResponse {
   status: string
@@ -14,7 +14,8 @@ export async function GET(
   req: Request,
 ): Promise<NextResponse<HealthCheckResponse>> {
   try {
-    await connectDB()
+    // Testa a conexão com o banco
+    await query("SELECT 1")
 
     return NextResponse.json({
       status: "healthy",

@@ -3,20 +3,27 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl
+  const isWebhookRequest = searchParams.has("email") && searchParams.has("id")
+  const isWebhookPath = pathname === "/api/webhook"
+
+  if (isWebhookPath || isWebhookRequest) {
+    if (isWebhookRequest && !isWebhookPath) {
+      console.log("Redirecionando para webhook:", searchParams.toString())
+      return NextResponse.redirect(
+        new URL(`/api/webhook?${searchParams.toString()}`, request.url),
+      )
+    }
+    return NextResponse.next()
+  }
+
   const token = await getToken({ req: request })
   const isAuthenticated = !!token
   const isAdmin = token?.isAdmin || false
 
-  const { pathname, searchParams } = request.nextUrl
   const isPublicPath = pathname === "/login"
   const isAdminPath = pathname === "/admin"
   const isDashboardPath = pathname === "/dashboard"
-
-  if (pathname === "/" && searchParams.has("email") && searchParams.has("id")) {
-    return NextResponse.redirect(
-      new URL(`/api/webhook?${searchParams.toString()}`, request.url),
-    )
-  }
 
   if (!isAuthenticated && !isPublicPath) {
     const url = new URL("/login", request.url)

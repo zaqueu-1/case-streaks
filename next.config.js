@@ -1,6 +1,10 @@
-/** @type {import('next').NextConfig} */
-const path = require("path")
+import path from "path"
+import { fileURLToPath } from "url"
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
@@ -38,6 +42,23 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/api/webhook",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type",
+          },
+        ],
+      },
     ]
   },
   webpack: (config) => {
@@ -49,4 +70,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+export default nextConfig

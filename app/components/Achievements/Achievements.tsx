@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react"
 import achievementsData from "../../data/achievements.json"
-import { Achievement, AchievementsProps } from "../../types/components"
+import { AchievementsProps } from "../../types/components"
 
 export default function Achievements({
   stats,

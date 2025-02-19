@@ -1,10 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import connectDB from "../../../lib/mongodb"
-import News from "../../../models/News"
+import { query } from "../../../lib/postgres"
 import { NextAuthOptions } from "next-auth"
 import { JWT } from "next-auth/jwt"
-import { INews } from "../../../types/news"
 import { Session } from "next-auth"
 
 interface CustomUser {
@@ -36,25 +34,24 @@ const authOptions: NextAuthOptions = {
             throw new Error("Email é obrigatório")
           }
 
-          await connectDB()
+          const result = await query("SELECT * FROM users WHERE email = $1", [
+            credentials.email,
+          ])
 
-          const userRecord = (await News.findOne({
-            email: credentials.email,
-          }).lean()) as INews | null
-
-          if (!userRecord) {
+          if (result.rows.length === 0) {
             throw new Error(
               "Email não encontrado! Tem certeza que está usando o mesmo e-mail que recebe a newsletter?",
             )
           }
 
-          const user: CustomUser = {
-            id: credentials.email,
-            email: credentials.email,
-            name: credentials.email.split("@")[0],
-            isAdmin: userRecord.isAdmin || false,
+          const user = result.rows[0]
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.email.split("@")[0],
+            isAdmin: user.is_admin || false,
           }
-          return user
         } catch (error) {
           console.error("Erro na autenticação:", error)
           throw error

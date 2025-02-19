@@ -2,12 +2,12 @@
   "name": "case-streaks",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "lint": "next lint"
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",
@@ -16,6 +16,7 @@
     "next": "15.1.7",
     "next-auth": "^4.24.11",
     "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -24,12 +25,15 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.13.4",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.10.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.6.2"
   }
 }
