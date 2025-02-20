@@ -127,22 +127,6 @@ export async function GET(
         userId = userResult.rows[0].id
       }
 
-      // Verificar se já existe acesso hoje
-      const todayStart = new Date(spNow)
-      todayStart.setHours(0, 0, 0, 0)
-      const todayEnd = new Date(spNow)
-      todayEnd.setHours(23, 59, 59, 999)
-
-      const todayAccessResult = await client.query(
-        `SELECT COUNT(*) as count
-         FROM accesses
-         WHERE user_id = $1
-         AND timestamp BETWEEN $2 AND $3`,
-        [userId, todayStart, todayEnd],
-      )
-
-      const hasAccessToday = todayAccessResult.rows[0].count > 0
-
       // Registrar novo acesso
       const newAccess = await client.query(queries.registerAccess, [
         userId,
@@ -155,6 +139,22 @@ export async function GET(
       ])
 
       // Atualizar pontos se não houver acesso hoje e não for domingo
+      const todayStart = new Date(spNow)
+      todayStart.setHours(0, 0, 0, 0)
+      const todayEnd = new Date(spNow)
+      todayEnd.setHours(23, 59, 59, 999)
+
+      const todayAccessResult = await client.query(
+        `SELECT COUNT(*) as count
+         FROM accesses
+         WHERE user_id = $1
+         AND timestamp BETWEEN $2 AND $3
+         AND id != $4`,
+        [userId, todayStart, todayEnd, newAccess.rows[0].id],
+      )
+
+      const hasAccessToday = todayAccessResult.rows[0].count > 0
+
       if (!hasAccessToday && spNow.getDay() !== 0) {
         const uniqueDaysResult = await client.query(
           `SELECT COUNT(DISTINCT DATE(timestamp)) as unique_days

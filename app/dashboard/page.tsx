@@ -11,6 +11,7 @@ import ShareButton from "../components/ShareButton/ShareButton"
 import { getStreakMessage } from "../utils/utils"
 import { StatsResponse } from "../types/news"
 import { Achievement } from "../types/components"
+import Loader from "@/app/components/Loader/Loader"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -44,14 +45,7 @@ export default function DashboardPage() {
   }, [session])
 
   if (status === "loading" || loading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Carregando...</p>
-        </div>
-      </div>
-    )
+    return <Loader className='min-h-screen' />
   }
 
   if (status === "unauthenticated") {

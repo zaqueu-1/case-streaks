@@ -17,6 +17,28 @@ export interface AdminStats {
     total_accesses: number
     last_access: string
   }>
+  utmStats: {
+    sources: Array<{
+      value: string
+      count: number
+      percentage: number
+    }>
+    mediums: Array<{
+      value: string
+      count: number
+      percentage: number
+    }>
+    campaigns: Array<{
+      value: string
+      count: number
+      percentage: number
+    }>
+    channels: Array<{
+      value: string
+      count: number
+      percentage: number
+    }>
+  }
 }
 
 export interface UpdateResult {

@@ -18,6 +18,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "media.beehiiv.com",
       },
+      {
+        protocol: "https",
+        hostname: "app.thenewscc.com.br",
+      },
     ],
   },
   experimental: {

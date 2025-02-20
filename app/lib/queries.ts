@@ -70,7 +70,11 @@ export const queries = {
         LAG(timestamp) OVER (
           PARTITION BY user_id, post_id 
           ORDER BY timestamp
-        ) as prev_timestamp
+        ) as prev_timestamp,
+        FIRST_VALUE(id) OVER (
+          PARTITION BY user_id, post_id, DATE(timestamp)
+          ORDER BY timestamp
+        ) as first_access_id
       FROM accesses
     ),
     duplicates AS (
@@ -79,6 +83,7 @@ export const queries = {
       WHERE 
         prev_timestamp IS NOT NULL 
         AND EXTRACT(EPOCH FROM (timestamp - prev_timestamp)) < 60
+        AND id != first_access_id
     )
     DELETE FROM accesses a
     WHERE EXISTS (
@@ -254,6 +259,7 @@ export const queries = {
           END
         ), 0) as avg_streak
       FROM users u
+      WHERE email NOT LIKE '%@admin.com'
     ),
     engagement_data AS (
       SELECT 
@@ -271,15 +277,81 @@ export const queries = {
         u.email,
         u.points,
         u.level,
-        COUNT(DISTINCT DATE(a.timestamp)) as unique_days,
-        COUNT(*) as total_accesses,
-        MAX(DATE(a.timestamp)) as last_access
+        COALESCE(COUNT(DISTINCT DATE(timezone('America/Sao_Paulo', a.timestamp))), 0) as unique_days,
+        COALESCE(COUNT(a.id), 0) as total_accesses,
+        COALESCE(MAX(timezone('America/Sao_Paulo', a.timestamp)), timezone('America/Sao_Paulo', u.created_at)) as last_access
       FROM users u
       LEFT JOIN accesses a ON u.id = a.user_id
       WHERE u.email NOT LIKE '%@admin.com'
-      GROUP BY u.id, u.email, u.points, u.level
-      ORDER BY u.points DESC
-      LIMIT 10
+        AND u.points > 0
+      GROUP BY u.id, u.email, u.points, u.level, u.created_at
+      ORDER BY u.points DESC, u.level DESC, u.created_at ASC
+    ),
+    utm_stats AS (
+      WITH total_accesses AS (
+        SELECT COUNT(*) as total
+        FROM accesses a
+        JOIN users u ON a.user_id = u.id
+        WHERE u.email NOT LIKE '%@admin.com'
+      ),
+      sources_data AS (
+        SELECT 
+          COALESCE(utm_source, 'unknown') as value,
+          COUNT(*) as count,
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+        FROM accesses a
+        JOIN users u ON a.user_id = u.id
+        WHERE u.email NOT LIKE '%@admin.com'
+        GROUP BY utm_source
+        ORDER BY 
+          CASE WHEN COALESCE(utm_source, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
+          COALESCE(utm_source, 'unknown') ASC
+      ),
+      mediums_data AS (
+        SELECT 
+          COALESCE(utm_medium, 'unknown') as value,
+          COUNT(*) as count,
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+        FROM accesses a
+        JOIN users u ON a.user_id = u.id
+        WHERE u.email NOT LIKE '%@admin.com'
+        GROUP BY utm_medium
+        ORDER BY 
+          CASE WHEN COALESCE(utm_medium, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
+          COALESCE(utm_medium, 'unknown') ASC
+      ),
+      campaigns_data AS (
+        SELECT 
+          COALESCE(utm_campaign, 'unknown') as value,
+          COUNT(*) as count,
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+        FROM accesses a
+        JOIN users u ON a.user_id = u.id
+        WHERE u.email NOT LIKE '%@admin.com'
+        GROUP BY utm_campaign
+        ORDER BY 
+          CASE WHEN COALESCE(utm_campaign, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
+          COALESCE(utm_campaign, 'unknown') ASC
+      ),
+      channels_data AS (
+        SELECT 
+          COALESCE(utm_channel, 'unknown') as value,
+          COUNT(*) as count,
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+        FROM accesses a
+        JOIN users u ON a.user_id = u.id
+        WHERE u.email NOT LIKE '%@admin.com'
+        GROUP BY utm_channel
+        ORDER BY 
+          CASE WHEN COALESCE(utm_channel, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
+          COALESCE(utm_channel, 'unknown') ASC
+      )
+      SELECT json_build_object(
+        'sources', (SELECT json_agg(sources_data.*) FROM sources_data),
+        'mediums', (SELECT json_agg(mediums_data.*) FROM mediums_data),
+        'campaigns', (SELECT json_agg(campaigns_data.*) FROM campaigns_data),
+        'channels', (SELECT json_agg(channels_data.*) FROM channels_data)
+      ) as utm_data
     )
     SELECT 
       json_build_object(
@@ -294,6 +366,10 @@ export const queries = {
         'topUsers', (
           SELECT json_agg(top_users.*)
           FROM top_users
+        ),
+        'utmStats', (
+          SELECT utm_data
+          FROM utm_stats
         )
       ) as admin_stats
   `,

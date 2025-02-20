@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { query } from "../../../lib/postgres"
 import { queries } from "../../../lib/queries"
 import { getToken } from "next-auth/jwt"
+import { NextRequest } from "next/server"
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const token = await getToken({ req })
     if (!token?.isAdmin) {
@@ -19,6 +20,12 @@ export async function GET(req: Request) {
       },
       engagement: [],
       topUsers: [],
+      utmStats: {
+        sources: [],
+        mediums: [],
+        campaigns: [],
+        channels: [],
+      },
     }
 
     return NextResponse.json(stats)

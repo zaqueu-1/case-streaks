@@ -83,7 +83,15 @@ export default function ShareButton({ stats }: ShareButtonProps) {
               <div className='text-center flex flex-col gap-4'>
                 <div className='text-8xl mb-8'>🔥</div>
                 <div className='text-7xl font-bold text-secondary'>
-                  Eu alcancei {stats?.currentStreak} dias de leitura!
+                    {stats.currentStreak > 0 ? (
+                        <span>
+                            Eu alcancei {stats?.currentStreak} {stats?.currentStreak === 1 ? "dia" : "dias"} de leitura!
+                        </span>
+                    ) : (
+                        <span>
+                            Eu alcancei o nível {stats?.level}!
+                        </span>
+                    )}
                 </div>
               </div>
 

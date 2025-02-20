@@ -6,17 +6,20 @@ export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
   const isWebhookRequest = searchParams.has("email") && searchParams.has("id")
   const isWebhookPath = pathname === "/api/webhook"
+  const isRootPath = pathname === "/"
 
-  if (isWebhookRequest || isWebhookPath) {
-    console.log("Processando webhook:", pathname, searchParams.toString())
-    if (pathname === "/") {
-      const url = request.nextUrl.clone()
-      url.pathname = "/api/webhook"
-      return NextResponse.rewrite(url)
-    }
-    return NextResponse.next()
+  // Se for uma requisição de webhook na raiz, redireciona para /api/webhook
+  if (isRootPath && isWebhookRequest) {
+    console.log(
+      "Redirecionando webhook da raiz para /api/webhook:",
+      searchParams.toString(),
+    )
+    const url = request.nextUrl.clone()
+    url.pathname = "/api/webhook"
+    return NextResponse.rewrite(url)
   }
 
+  // Se for uma requisição normal na raiz ou outras rotas protegidas
   const token = await getToken({ req: request })
   const isAuthenticated = !!token
   const isAdmin = token?.isAdmin || false
@@ -25,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = pathname === "/admin"
   const isDashboardPath = pathname === "/dashboard"
 
-  if (!isAuthenticated && !isPublicPath) {
+  if (!isAuthenticated && !isPublicPath && !isWebhookPath) {
     const url = new URL("/login", request.url)
     url.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(url)
@@ -45,7 +48,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  if (pathname === "/") {
+  if (isRootPath && !isWebhookRequest) {
     return NextResponse.redirect(
       new URL(isAdmin ? "/admin" : "/dashboard", request.url),
     )

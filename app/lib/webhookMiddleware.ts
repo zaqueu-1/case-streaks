@@ -65,7 +65,7 @@ export async function verifyWebhook(req: Request): Promise<VerificationResult> {
 
       const lastAccess = lastAccessResult.rows[0]?.timestamp
       const minTimestamp = lastAccess
-        ? new Date(new Date(lastAccess).getTime() - MIN_INTERVAL_SECONDS * 1000)
+        ? new Date(new Date(lastAccess).getTime() - 60 * 1000) // 1 minuto em milissegundos
         : new Date(0)
 
       // Verifica se existe acesso recente para este post
@@ -74,9 +74,9 @@ export async function verifyWebhook(req: Request): Promise<VerificationResult> {
           SELECT 1 FROM accesses
           WHERE user_id = $1 
           AND post_id = $2
-          AND timestamp > $3
+          AND timestamp >= NOW() - INTERVAL '1 minute'
         )`,
-        [userId, normalizedId, minTimestamp],
+        [userId, normalizedId],
       )
 
       // Se existe acesso recente, retorna os dados do último acesso

@@ -133,7 +133,7 @@ export default function AccessCalendar({ accesses = [] }: AccessCalendarProps) {
           key={`day-${d}`}
           className={`px-0 py-2 text-center flex items-center justify-center gap-1 relative ${
             isAccess && !isSunday
-              ? "bg-primary shadow-lg border-2 border-solid border-white text-white rounded-lg font-medium"
+              ? "bg-primary shadow-lg border-2 border-solid border-white text-white rounded-lg font-medium hover:scale-105 transition-all duration-300"
               : "text-secondary_muted font-light"
           }`}
         >
