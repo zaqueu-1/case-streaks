@@ -2,29 +2,114 @@
 
 Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a The News. Trata-se de uma aplicação web para acompanhar o progresso de leitura dos assinantes da newsletter, gamificando a experiência por meio de um sistema de conquistas, níveis e streaks.
 
-## 🚀 Tecnologias
+## 🚀 Features
 
-- **Frontend**:
+### 👤 Autenticação
 
-  - Next.js 14 (App Router)
-  - React 19
-  - TypeScript
-  - TailwindCSS
-  - NextAuth.js para autenticação
-  - html2canvas para geração de imagens compartilháveis
+- Login via e-mail
+- Autenticação persistente com Next-Auth
+- Proteção de rotas baseada em perfil (admin/usuário)
 
-- **Backend**:
+### 📊 Dashboard do Usuário
 
-  - Node.js
-  - PostgreSQL com pg
-  - API Routes do Next.js
-  - Webhook da própria The News para integração com Beehiiv
-  - TypeScript para type safety
+- Exibição do nível atual e progresso
+- Sistema de pontuação baseado em dias de leitura
+- Estatísticas de streak (atual e recorde)
+- Calendário de acessos
+- Total de acessos e dias únicos
+- Compartilhamento de conquistas
+- Mensagens motivacionais baseadas no streak
 
-- **Deploy e Infraestrutura**:
-  - Vercel
-  - PostgreSQL
-  - ngrok para desenvolvimento local
+### 👑 Dashboard Administrativo
+
+- Visão geral de usuários ativos e totais
+- Média de streak dos usuários
+- Gráfico de engajamento (usuários x acessos)
+- Ranking completo de leitores com:
+  - Pontuação
+  - Nível
+  - Dias únicos
+  - Total de acessos
+  - Último acesso
+- Estatísticas de UTM com:
+  - Fontes
+  - Meios
+  - Campanhas
+  - Canais
+
+### 🎯 Sistema de Gamificação
+
+- Pontuação por dias de leitura
+- Sistema de níveis progressivos
+- Cálculo de streak considerando dias úteis
+- Conquistas e badges
+
+### 📱 Interface
+
+- Design responsivo
+- Tema consistente com a marca
+- Loading states personalizados
+- Animações suaves
+- Feedback visual de ações
+
+### ⚙️ Recursos Técnicos
+
+- Cache otimizado
+- Proteção contra acessos duplicados
+- Timezone configurada para São Paulo
+- Sistema de webhooks para registro de acessos
+
+## 🛠️ Tecnologias
+
+- Next.js com App Router
+- TypeScript
+- Tailwind CSS
+- PostgreSQL
+- Docker
+- Chart.js
+- Next-Auth
+
+## 🚀 Como Executar
+
+1. Clone o repositório
+
+```bash
+git clone https://github.com/zaqueu-1/case-streaks
+```
+
+2. Instale as dependências
+
+```bash
+npm install
+```
+
+3. Configure as variáveis de ambiente
+
+```bash
+cp .env.example .env.local
+```
+
+4. Inicie a aplicação
+
+```bash
+docker compose up -d
+```
+
+## 📝 Variáveis de Ambiente
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/case_streaks
+NEXTAUTH_SECRET=YoJQvKdD+UtJkmK/JUhNbEDBrw30upbT0Utxhnl8LQs=
+NEXTAUTH_URL=localhost:3000
+```
+
+## 📦 Scripts Disponíveis
+
+- `npm run dev`: Inicia o servidor de desenvolvimento
+- `npm run build`: Gera o build de produção
+- `npm run start`: Inicia o servidor de produção
+- `npm run lint`: Executa o linter
+- `npm run format`: Formata o código
 
 ## 📁 Estrutura do Projeto
 
@@ -32,19 +117,22 @@ Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a Th
 app/
 ├── admin/              # Dashboard administrativo
 ├── api/                # Rotas da API
+│   ├── admin/         # API administrativa
 │   ├── auth/          # Autenticação
-│   ├── cleanup/       # Limpeza de dados
 │   ├── healthcheck/   # Verificação de saúde
 │   ├── stats/         # Estatísticas do usuário
-│   ├── update-points/ # Atualização de pontos
 │   └── webhook/       # Webhook do The News
 ├── components/         # Componentes React
 │   ├── AccessCalendar/# Calendário de acessos
 │   ├── Achievements/  # Sistema de conquistas
 │   ├── Header/        # Cabeçalho
 │   ├── LevelBadge/    # Badge de nível
+│   ├── Loader/        # Componente de loading
+│   ├── ReadersRanking/# Ranking de leitores
+│   ├── ReadersStats/  # Estatísticas gerais
 │   ├── ShareButton/   # Botão de compartilhamento
-│   └── StatsCard/     # Cards de estatísticas
+│   ├── StatsCard/     # Cards de estatísticas
+│   └── UTMStats/      # Estatísticas de UTM
 ├── data/              # Dados estáticos
 ├── lib/               # Bibliotecas e utilitários
 ├── types/             # Tipos TypeScript
@@ -62,19 +150,10 @@ app/
 
 ### 🔄 API
 
-- `GET /api/webhook` - Recebe eventos de leitura dos usuários de hora em hora
+- `GET /api/webhook` - Recebe eventos de leitura dos usuários
 - `GET /api/stats` - Retorna estatísticas de leitura do usuário
+- `GET /api/admin/stats` - Retorna estatísticas administrativas
 - `GET /api/healthcheck` - Verifica status da aplicação
-- `GET /api/cleanup` - Limpa registros duplicados
-- `GET /api/update-points` - Atualiza pontos dos usuários
-
-## 🔐 Middleware
-
-O projeto utiliza três middlewares principais:
-
-1. **Autenticação**: Protege rotas privadas e gerencia sessões
-2. **Webhook**: Valida requisições do Beehiiv e previne duplicatas
-3. **Admin**: Controla acesso à área administrativa
 
 ## 📊 Modelo de Dados
 
@@ -108,40 +187,14 @@ CREATE TABLE accesses (
 );
 ```
 
-## ⚙️ Funcionalidades
+### Índices
 
-1. **Sistema de Autenticação**
-
-   - Login via email
-   - Sessões persistentes
-   - Proteção de rotas
-   - Área administrativa restrita
-
-2. **Tracking de Leitura**
-
-   - Registro de acessos via webhook
-   - Análise de UTMs
-   - Prevenção de duplicatas
-   - Validação de dados
-
-3. **Gamificação**
-
-   - Sistema de níveis baseado em pontos
-   - Conquistas desbloqueáveis
-   - Streaks de leitura (excluindo domingos)
-   - Calendário de acessos
-
-4. **Compartilhamento**
-
-   - Geração de imagens para stories
-   - Integração com Web Share API
-   - Fallback para desktop
-
-5. **Área Administrativa**
-   - Atualização manual de pontos
-   - Monitoramento de engajamento
-   - Filtros por período e status
-   - Ranking de leitores (em breve)
+```sql
+CREATE INDEX idx_accesses_user_id ON accesses(user_id);
+CREATE INDEX idx_accesses_timestamp ON accesses(timestamp);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_points ON users(points DESC);
+```
 
 ## 🤔 FAQ
 
@@ -149,12 +202,10 @@ CREATE TABLE accesses (
 
 **Quais as tecnologias usadas?**
 
-- Next.js foi escolhido pela facilidade de criar uma aplicação full-stack com React e pela minha familiaridade com o framework
-- TypeScript para type safety e melhor DX
-- PostgreSQL pela robustez, confiabilidade e recursos avançados de consulta
+- Next.js foi escolhido pela facilidade de criar uma aplicação full-stack com React (requisito do desafio) e pela minha familiaridade com o framework
+- TypeScript para type safety (requisito do desafio)
+- PostgreSQL pela robustez, confiabilidade e recursos avançados de consulta (sendo SQL o requisito do desafio)
 - TailwindCSS para estilização rápida e consistente
-- NextAuth.js para um sistema de autenticação robusto e já no ecossistema escolhido
-- html2canvas para geração de imagens compartilháveis de forma prática
 
 **Quais problemas você enfrentou ao desenvolver?** O maior desafio foi implementar a lógica de streaks desconsiderando os domingos e fazendo com que o avanço fosse mantido. Isso também acaba sendo refletido no sistema de níveis e, consequentemente, no sistema de badges, tornando essa regra de negócio a mais vital da aplicação.
 
@@ -189,27 +240,3 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 3. Adicionar um identificador ou link de acesso rápido que direcione para alguma matéria do dia que o usuário contabilizou um streak;
 4. Sistema de ranking que mostre os usuários mais engajados, com maiores streaks ou com maior nível (e sua posição em relação a eles);
 5. Expandir área administrativa com mais métricas e controles.
-
-## 🚀 Como Rodar
-
-1. Clone o repositório
-2. Instale as dependências: `npm install`
-3. Configure as variáveis de ambiente:
-   ```
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/case_streaks
-   NEXTAUTH_SECRET=
-   NEXTAUTH_URL=
-   ```
-4. Execute: `npm run dev`
-
-Ou usando Docker:
-
-```bash
-docker-compose up -d
-```
-
-Isso irá iniciar:
-
-- Aplicação Next.js na porta 3000
-- PostgreSQL na porta 5433
-- pgAdmin na porta 5050
