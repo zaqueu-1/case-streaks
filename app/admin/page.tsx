@@ -2,22 +2,67 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartData,
+} from "chart.js"
+import { Line } from "react-chartjs-2"
+import { formatDate } from "../utils/utils"
+import { AdminStats, UpdateResult } from "../types/admin"
 
-interface UpdateResult {
-  message?: string
-  error?: string
-  totalUpdated?: number
-  details?: Array<{
-    email: string
-    uniqueDays: number
-    points: number
-    level: number
-    pointsToNextLevel: number
-    currentLevelPoints: number
-    totalAccesses: number
-    success: boolean
-  }>
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+)
+
+const chartOptions = {
+  responsive: true,
+  interaction: {
+    mode: "index" as const,
+    intersect: false,
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: "Data",
+      },
+    },
+    y: {
+      type: "linear" as const,
+      display: true,
+      position: "left" as const,
+      title: {
+        display: true,
+        text: "Usuários",
+      },
+    },
+    y1: {
+      type: "linear" as const,
+      display: true,
+      position: "right" as const,
+      title: {
+        display: true,
+        text: "Acessos",
+      },
+      grid: {
+        drawOnChartArea: false,
+      },
+    },
+  },
 }
 
 interface CustomSession {
@@ -38,6 +83,14 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [updateResult, setUpdateResult] = useState<UpdateResult | null>(null)
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [period, setPeriod] = useState("7")
+  const [streakStatus, setStreakStatus] = useState("all")
+  const [newsletter, setNewsletter] = useState("all")
+  const [chartData, setChartData] = useState<ChartData<"line">>({
+    labels: [],
+    datasets: [],
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -50,8 +103,47 @@ export default function AdminDashboard() {
       return
     }
 
-    setLoading(false)
+    fetchStats()
   }, [status, router, session])
+
+  useEffect(() => {
+    if (stats?.engagement) {
+      const data = {
+        labels: stats.engagement.map(
+          (item) => formatDate(item.date).split(" ")[0],
+        ),
+        datasets: [
+          {
+            label: "Usuários",
+            data: stats.engagement.map((item) => item.users),
+            borderColor: "#FFCF00",
+            backgroundColor: "#FFCF00",
+            yAxisID: "y",
+          },
+          {
+            label: "Acessos",
+            data: stats.engagement.map((item) => item.accesses),
+            borderColor: "#FFDF53",
+            backgroundColor: "#FFDF53",
+            yAxisID: "y1",
+          },
+        ],
+      }
+      setChartData(data)
+    }
+  }, [stats])
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/admin/stats")
+      const data = await response.json()
+      setStats(data)
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleUpdatePoints = async () => {
     try {
@@ -59,6 +151,7 @@ export default function AdminDashboard() {
       const response = await fetch("/api/update-points")
       const result = await response.json()
       setUpdateResult(result)
+      fetchStats()
     } catch (error) {
       console.error("Erro ao atualizar pontos:", error)
       setUpdateResult({ error: "Erro ao atualizar pontos" })
@@ -160,7 +253,11 @@ export default function AdminDashboard() {
                 <label className='text-sm font-medium text-secondary_muted mb-2'>
                   Período
                 </label>
-                <select className='border-2 border-primary_muted rounded-md p-2 text-secondary'>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className='border-2 border-primary_muted rounded-md p-2 text-secondary'
+                >
                   <option value='7'>Últimos 7 dias</option>
                   <option value='30'>Últimos 30 dias</option>
                   <option value='90'>Últimos 90 dias</option>
@@ -170,7 +267,11 @@ export default function AdminDashboard() {
                 <label className='text-sm font-medium text-secondary_muted mb-2'>
                   Status do Streak
                 </label>
-                <select className='border-2 border-primary_muted rounded-md p-2 text-secondary'>
+                <select
+                  value={streakStatus}
+                  onChange={(e) => setStreakStatus(e.target.value)}
+                  className='border-2 border-primary_muted rounded-md p-2 text-secondary'
+                >
                   <option value='all'>Todos</option>
                   <option value='active'>Streak Ativo</option>
                   <option value='broken'>Streak Quebrado</option>
@@ -180,7 +281,11 @@ export default function AdminDashboard() {
                 <label className='text-sm font-medium text-secondary_muted mb-2'>
                   Newsletter
                 </label>
-                <select className='border-2 border-primary_muted rounded-md p-2 text-secondary'>
+                <select
+                  value={newsletter}
+                  onChange={(e) => setNewsletter(e.target.value)}
+                  className='border-2 border-primary_muted rounded-md p-2 text-secondary'
+                >
                   <option value='all'>Todas</option>
                   <option value='daily'>Daily</option>
                   <option value='weekly'>Weekly</option>
@@ -194,19 +299,25 @@ export default function AdminDashboard() {
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Total de Leitores
               </h3>
-              <p className='text-3xl font-bold text-secondary mt-2'>-</p>
+              <p className='text-3xl font-bold text-secondary mt-2'>
+                {stats?.overview.total_users || 0}
+              </p>
             </div>
             <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Média de Streak
               </h3>
-              <p className='text-3xl font-bold text-secondary mt-2'>-</p>
+              <p className='text-3xl font-bold text-secondary mt-2'>
+                {stats?.overview.avg_streak.toFixed(1) || "0.0"}
+              </p>
             </div>
             <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
               <h3 className='text-sm font-medium text-secondary_muted'>
                 Leitores Ativos
               </h3>
-              <p className='text-3xl font-bold text-secondary mt-2'>-</p>
+              <p className='text-3xl font-bold text-secondary mt-2'>
+                {stats?.overview.active_users || 0}
+              </p>
             </div>
           </div>
 
@@ -214,17 +325,66 @@ export default function AdminDashboard() {
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
               Engajamento ao Longo do Tempo
             </h2>
-            <div className='h-64 flex items-center justify-center bg-gray-50 rounded-lg'>
-              <p className='text-secondary_muted'>Gráficos em breve</p>
+            <div className='h-64'>
+              {chartData.datasets.length > 0 && (
+                <Line options={chartOptions} data={chartData} />
+              )}
             </div>
           </div>
 
           <div className='bg-primary_muted p-6 rounded-lg shadow-lg'>
             <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
-              Ranking os Leitores
+              Ranking dos Leitores
             </h2>
-            <div className='h-64 flex items-center justify-center bg-gray-50 rounded-lg'>
-              <p className='text-secondary_muted'>Ranking em breve</p>
+            <div className='overflow-x-auto'>
+              <table className='min-w-full divide-y divide-gray-200'>
+                <thead>
+                  <tr>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Email
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Pontos
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Nível
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Dias Únicos
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Total de Acessos
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-secondary_muted uppercase tracking-wider'>
+                      Último Acesso
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className='bg-white divide-y divide-gray-200'>
+                  {stats?.topUsers.map((user, index) => (
+                    <tr key={index}>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {user.email}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {user.points}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {user.level}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {user.unique_days}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {user.total_accesses}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-secondary'>
+                        {formatDate(user.last_access)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

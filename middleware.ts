@@ -7,12 +7,12 @@ export async function middleware(request: NextRequest) {
   const isWebhookRequest = searchParams.has("email") && searchParams.has("id")
   const isWebhookPath = pathname === "/api/webhook"
 
-  if (isWebhookPath || isWebhookRequest) {
-    if (isWebhookRequest && !isWebhookPath) {
-      console.log("Redirecionando para webhook:", searchParams.toString())
-      return NextResponse.redirect(
-        new URL(`/api/webhook?${searchParams.toString()}`, request.url),
-      )
+  if (isWebhookRequest || isWebhookPath) {
+    console.log("Processando webhook:", pathname, searchParams.toString())
+    if (pathname === "/") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/api/webhook"
+      return NextResponse.rewrite(url)
     }
     return NextResponse.next()
   }
@@ -55,5 +55,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard", "/admin"],
+  matcher: ["/", "/login", "/dashboard", "/admin", "/api/webhook"],
 }

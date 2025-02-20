@@ -61,14 +61,27 @@ export const queries = {
 
   // Limpeza
   removeDuplicateAccesses: `
-    WITH duplicates AS (
-      SELECT DISTINCT ON (user_id, post_id, DATE(timestamp))
-        id
+    WITH grouped_accesses AS (
+      SELECT 
+        id,
+        user_id,
+        post_id,
+        timestamp,
+        LAG(timestamp) OVER (
+          PARTITION BY user_id, post_id 
+          ORDER BY timestamp
+        ) as prev_timestamp
       FROM accesses
-      ORDER BY user_id, post_id, DATE(timestamp), timestamp
+    ),
+    duplicates AS (
+      SELECT id
+      FROM grouped_accesses
+      WHERE 
+        prev_timestamp IS NOT NULL 
+        AND EXTRACT(EPOCH FROM (timestamp - prev_timestamp)) < 60
     )
     DELETE FROM accesses a
-    WHERE NOT EXISTS (
+    WHERE EXISTS (
       SELECT 1 FROM duplicates d WHERE d.id = a.id
     )
     RETURNING *
@@ -77,48 +90,45 @@ export const queries = {
   // Contagem de dias úteis (excluindo domingos)
   getCurrentStreak: `
     WITH dates AS (
-      SELECT DISTINCT DATE(timestamp) as access_date
+      SELECT DISTINCT DATE(timestamp AT TIME ZONE 'America/Sao_Paulo') as access_date
       FROM accesses 
       WHERE user_id = $1
-        AND EXTRACT(DOW FROM timestamp) != 0  -- Exclui domingos
-        AND DATE(timestamp) <= CURRENT_DATE
+        AND EXTRACT(DOW FROM timestamp AT TIME ZONE 'America/Sao_Paulo') != 0  -- Exclui domingos
+        AND DATE(timestamp AT TIME ZONE 'America/Sao_Paulo') <= CURRENT_DATE
       ORDER BY access_date DESC
     ),
-    streak_breaks AS (
+    streak_count AS (
       SELECT 
         access_date,
         CASE
-          WHEN LAG(access_date) OVER (ORDER BY access_date DESC) IS NULL THEN FALSE
-          WHEN access_date - LAG(access_date) OVER (ORDER BY access_date DESC) = 1 THEN FALSE
-          WHEN access_date - LAG(access_date) OVER (ORDER BY access_date DESC) = 2 
-            AND EXTRACT(DOW FROM access_date - INTERVAL '1 day') = 0 THEN FALSE
-          ELSE TRUE
-        END as is_streak_break
+          WHEN LAG(access_date) OVER w IS NULL THEN 1
+          WHEN LAG(access_date) OVER w = access_date + INTERVAL '1 day' THEN 1
+          WHEN LAG(access_date) OVER w = access_date + INTERVAL '2 days' 
+            AND EXTRACT(DOW FROM access_date + INTERVAL '1 day') = 0 THEN 1
+          ELSE 0
+        END as is_consecutive
       FROM dates
+      WINDOW w AS (ORDER BY access_date DESC)
     ),
     current_streak AS (
-      SELECT 
-        CASE
-          WHEN EXISTS (SELECT 1 FROM dates WHERE access_date = CURRENT_DATE) THEN (
-            SELECT COUNT(*)
-            FROM dates
-            WHERE access_date >= (
-              SELECT COALESCE(
-                (
-                  SELECT access_date
-                  FROM streak_breaks
-                  WHERE is_streak_break = TRUE
-                  ORDER BY access_date DESC
-                  LIMIT 1
-                ),
-                (SELECT MIN(access_date) FROM dates)
-              )
-            )
-          )
-          ELSE 0
-        END as streak_length
+      SELECT SUM(is_consecutive) as days
+      FROM streak_count
+      WHERE access_date >= (
+        SELECT access_date
+        FROM streak_count
+        WHERE is_consecutive = 0
+        ORDER BY access_date DESC
+        LIMIT 1
+      )
     )
-    SELECT streak_length as current_streak FROM current_streak
+    SELECT 
+      CASE 
+        WHEN EXISTS (
+          SELECT 1 FROM dates 
+          WHERE access_date = CURRENT_DATE
+        ) THEN COALESCE((SELECT days FROM current_streak), 1)
+        ELSE 0
+      END as current_streak
   `,
 
   getLongestStreak: `
@@ -127,7 +137,6 @@ export const queries = {
       FROM accesses 
       WHERE user_id = $1
         AND EXTRACT(DOW FROM timezone('America/Sao_Paulo', timestamp)) != 0
-        AND DATE(timezone('America/Sao_Paulo', timestamp)) <= CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo'
       ORDER BY access_date
     ),
     streak_groups AS (
@@ -160,79 +169,6 @@ export const queries = {
       ),
       0
     ) as longest_streak
-  `,
-
-  // Mantendo a função original para compatibilidade
-  getWorkingDayStreak: `
-    WITH current_streak AS (
-      SELECT DISTINCT DATE(timestamp) as access_date
-      FROM accesses 
-      WHERE user_id = $1
-        AND EXTRACT(DOW FROM timestamp) != 0
-        AND DATE(timestamp) <= CURRENT_DATE
-      ORDER BY access_date DESC
-    ),
-    longest_streak AS (
-      SELECT DISTINCT DATE(timestamp) as access_date
-      FROM accesses 
-      WHERE user_id = $1
-        AND EXTRACT(DOW FROM timestamp) != 0
-        AND DATE(timestamp) <= CURRENT_DATE
-      ORDER BY access_date
-    ),
-    streak_groups AS (
-      SELECT 
-        access_date,
-        CASE
-          WHEN LAG(access_date) OVER w IS NULL THEN 1
-          WHEN access_date = LAG(access_date) OVER w + 1 THEN 0
-          WHEN access_date = LAG(access_date) OVER w + 2 
-            AND EXTRACT(DOW FROM LAG(access_date) OVER w + 1) = 0 THEN 0
-          ELSE 1
-        END as new_group
-      FROM longest_streak
-      WINDOW w AS (ORDER BY access_date)
-    ),
-    groups AS (
-      SELECT 
-        access_date,
-        SUM(new_group) OVER (ORDER BY access_date) as group_id
-      FROM streak_groups
-    ),
-    streak_lengths AS (
-      SELECT COUNT(*) as length
-      FROM groups
-      GROUP BY group_id
-    )
-    SELECT 
-      CASE 
-        WHEN NOT EXISTS (
-          SELECT 1 FROM current_streak WHERE access_date = CURRENT_DATE
-        ) THEN 0
-        ELSE (
-          SELECT COUNT(*)
-          FROM current_streak
-          WHERE access_date >= (
-            SELECT MIN(access_date)
-            FROM (
-              SELECT 
-                access_date,
-                LAG(access_date) OVER (ORDER BY access_date DESC) as prev_date
-              FROM current_streak
-            ) d
-            WHERE access_date - prev_date > 2
-               OR (
-                 access_date - prev_date = 2 
-                 AND EXTRACT(DOW FROM access_date - INTERVAL '1 day') != 0
-               )
-            LIMIT 1
-          )
-        )
-      END as streak_length,
-      COALESCE(
-        (SELECT MAX(length) FROM streak_lengths),
-        0
-      ) as longest_streak
   `,
 
   // UTM Stats
@@ -276,5 +212,89 @@ export const queries = {
           ) ch
         )
       ) as utm_stats
+  `,
+
+  getAdminStats: `
+    WITH user_stats AS (
+      SELECT 
+        COUNT(DISTINCT CASE WHEN email NOT LIKE '%@admin.com' THEN u.id END) as total_users,
+        COUNT(DISTINCT CASE 
+          WHEN DATE(u.last_access) >= CURRENT_DATE - INTERVAL '7 days' 
+          AND email NOT LIKE '%@admin.com'
+          THEN u.id 
+        END) as active_users,
+        COALESCE(AVG(
+          CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM accesses a2 
+              WHERE a2.user_id = u.id 
+              AND DATE(a2.timestamp) = CURRENT_DATE
+            ) 
+            AND email NOT LIKE '%@admin.com'
+            THEN (
+              SELECT COUNT(*)
+              FROM accesses a3
+              WHERE a3.user_id = u.id
+              AND DATE(a3.timestamp) >= (
+                SELECT COALESCE(
+                  (
+                    SELECT DATE(a4.timestamp)
+                    FROM accesses a4
+                    WHERE a4.user_id = u.id
+                    AND DATE(a4.timestamp) < DATE(a3.timestamp)
+                    AND DATE(a4.timestamp + INTERVAL '1 day') != DATE(a3.timestamp)
+                    ORDER BY a4.timestamp DESC
+                    LIMIT 1
+                  ),
+                  DATE(a3.timestamp)
+                )
+              )
+            )
+            ELSE 0
+          END
+        ), 0) as avg_streak
+      FROM users u
+    ),
+    engagement_data AS (
+      SELECT 
+        DATE(timestamp) as date,
+        COUNT(DISTINCT CASE WHEN u.email NOT LIKE '%@admin.com' THEN u.id END) as users,
+        COUNT(CASE WHEN u.email NOT LIKE '%@admin.com' THEN a.id END) as accesses
+      FROM accesses a
+      JOIN users u ON a.user_id = u.id
+      WHERE DATE(timestamp) >= CURRENT_DATE - INTERVAL '30 days'
+      GROUP BY DATE(timestamp)
+      ORDER BY date DESC
+    ),
+    top_users AS (
+      SELECT 
+        u.email,
+        u.points,
+        u.level,
+        COUNT(DISTINCT DATE(a.timestamp)) as unique_days,
+        COUNT(*) as total_accesses,
+        MAX(DATE(a.timestamp)) as last_access
+      FROM users u
+      LEFT JOIN accesses a ON u.id = a.user_id
+      WHERE u.email NOT LIKE '%@admin.com'
+      GROUP BY u.id, u.email, u.points, u.level
+      ORDER BY u.points DESC
+      LIMIT 10
+    )
+    SELECT 
+      json_build_object(
+        'overview', (
+          SELECT row_to_json(user_stats.*)
+          FROM user_stats
+        ),
+        'engagement', (
+          SELECT json_agg(engagement_data.*)
+          FROM engagement_data
+        ),
+        'topUsers', (
+          SELECT json_agg(top_users.*)
+          FROM top_users
+        )
+      ) as admin_stats
   `,
 }

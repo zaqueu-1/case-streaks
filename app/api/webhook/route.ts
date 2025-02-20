@@ -25,6 +25,8 @@ interface WebhookResponse {
   }
   error?: string
   retryable?: boolean
+  isDuplicate?: boolean
+  duplicatesRemoved?: number
 }
 
 export async function GET(
@@ -34,7 +36,42 @@ export async function GET(
 
   try {
     console.log("Recebendo webhook:", new URL(req.url).searchParams.toString())
-    await verifyWebhook(req)
+    const verificationResult = await verifyWebhook(req)
+
+    // Se for uma duplicata, retorna 200 com flag de duplicata
+    if (verificationResult.isDuplicate) {
+      console.log("Acesso duplicado detectado:", verificationResult)
+      const timestamp =
+        verificationResult.lastAccessData?.timestamp || new Date()
+      return NextResponse.json(
+        {
+          message: "Acesso já registrado recentemente",
+          isDuplicate: true,
+          data: {
+            email: verificationResult.lastAccessData?.email || "",
+            totalAccesses: await query(
+              "SELECT COUNT(*) as count FROM accesses WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+              [verificationResult.lastAccessData?.email],
+            ).then((res) => parseInt(res.rows[0].count)),
+            lastAccess: timestamp,
+            currentAccess: {
+              id: verificationResult.lastAccessData?.postId || "",
+              timestamp: timestamp,
+              utmSource: undefined,
+              utmMedium: undefined,
+              utmCampaign: undefined,
+              utmChannel: undefined,
+            },
+            points: 0,
+            level: 0,
+            pointsToNextLevel: 0,
+            currentLevelPoints: 0,
+          },
+        },
+        { status: 200 },
+      )
+    }
+
     console.log("Webhook verificado com sucesso")
 
     const { searchParams } = new URL(req.url)
@@ -47,14 +84,13 @@ export async function GET(
 
     if (!email || !id) {
       console.warn("Parâmetros inválidos:", { email, id })
-      response = NextResponse.json(
+      return NextResponse.json(
         {
           message: "Parâmetros inválidos",
           error: "Email e ID são obrigatórios",
         },
         { status: 400 },
       )
-      return response
     }
 
     const normalizedId = id.startsWith("post_") ? id : `post_${id}`
@@ -175,8 +211,14 @@ export async function GET(
       }
     })
 
+    // Após registrar o acesso, executa a limpeza de duplicatas
+    console.log("Executando limpeza de duplicatas...")
+    const cleanupResult = await query(queries.removeDuplicateAccesses)
+    console.log("Duplicatas removidas:", cleanupResult.rows.length)
+
     response = NextResponse.json({
       message: "Acesso registrado com sucesso",
+      duplicatesRemoved: cleanupResult.rows.length,
       data: {
         email,
         totalAccesses: await query(
@@ -201,6 +243,21 @@ export async function GET(
   } catch (error) {
     console.error("Erro ao processar webhook:", error)
 
+    // Se for um erro de duplicata, retorna 200 com flag de duplicata
+    if (
+      error instanceof Error &&
+      error.message.includes("segundos entre os acessos")
+    ) {
+      return NextResponse.json(
+        {
+          message: error.message,
+          isDuplicate: true,
+        },
+        { status: 200 },
+      )
+    }
+
+    // Para outros erros, mantém o comportamento atual
     const statusCode =
       error instanceof Error && error.message.includes("tentativas") ? 429 : 500
 

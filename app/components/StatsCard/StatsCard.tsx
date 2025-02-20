@@ -7,7 +7,7 @@ export default function StatsCard({
   keyword,
 }: StatsCardProps) {
   const formatStat = (value: number): string => {
-    if (value === 1) {
+    if (value == 1) {
       return `${value} ${keyword}`
     }
     return `${value} ${keyword}s`
