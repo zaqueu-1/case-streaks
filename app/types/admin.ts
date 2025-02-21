@@ -16,29 +16,42 @@ export interface AdminStats {
     unique_days: number
     total_accesses: number
     last_access: string
+    max_streak: number
   }>
   utmStats: {
     sources: Array<{
       value: string
       count: number
       percentage: number
+      post_id: string
+      timestamp: string
     }>
     mediums: Array<{
       value: string
       count: number
       percentage: number
+      post_id: string
+      timestamp: string
     }>
     campaigns: Array<{
       value: string
       count: number
       percentage: number
+      post_id: string
+      timestamp: string
     }>
     channels: Array<{
       value: string
       count: number
       percentage: number
+      post_id: string
+      timestamp: string
     }>
   }
+  posts: Array<{
+    id: string
+    title: string
+  }>
 }
 
 export interface UpdateResult {

@@ -17,9 +17,10 @@ import {
 import { Line } from "react-chartjs-2"
 import { formatDate } from "../utils/utils"
 import { AdminStats } from "../types/admin"
-import UTMStats from "@/app/components/UTMStats/UTMStats"
 import ReadersRanking from "@/app/components/ReadersRanking/ReadersRanking"
 import ReadersStats from "@/app/components/ReadersStats/ReadersStats"
+import ReadersAccessStatistics from "@/app/components/ReadersAccessStatistics/ReadersAccessStatistics"
+import ReadersEngagement from "@/app/components/ReadersEngagement/ReadersEngagement"
 import Loader from "@/app/components/Loader/Loader"
 
 ChartJS.register(
@@ -31,43 +32,6 @@ ChartJS.register(
   Tooltip,
   Legend,
 )
-
-const chartOptions = {
-  responsive: true,
-  interaction: {
-    mode: "index" as const,
-    intersect: false,
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: "Data",
-      },
-    },
-    y: {
-      type: "linear" as const,
-      display: true,
-      position: "left" as const,
-      title: {
-        display: true,
-        text: "Usuários",
-      },
-    },
-    y1: {
-      type: "linear" as const,
-      display: true,
-      position: "right" as const,
-      title: {
-        display: true,
-        text: "Acessos",
-      },
-      grid: {
-        drawOnChartArea: false,
-      },
-    },
-  },
-}
 
 interface CustomSession {
   user?: {
@@ -86,8 +50,6 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<AdminStats | null>(null)
-  const [period, setPeriod] = useState("7")
-  const [streakStatus, setStreakStatus] = useState("all")
   const [chartData, setChartData] = useState<ChartData<"line">>({
     labels: [],
     datasets: [],
@@ -171,71 +133,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className='bg-primary_muted p-4 rounded-lg shadow-lg mb-8'>
-            <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
-              Filtros
-            </h2>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              <div className='flex flex-col'>
-                <label className='text-sm font-medium text-secondary_muted mb-2'>
-                  Período
-                </label>
-                <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  className='border-2 border-primary_muted rounded-md p-2 text-secondary'
-                >
-                  <option value='7'>Últimos 7 dias</option>
-                  <option value='30'>Últimos 30 dias</option>
-                  <option value='90'>Últimos 90 dias</option>
-                </select>
-              </div>
-              <div className='flex flex-col'>
-                <label className='text-sm font-medium text-secondary_muted mb-2'>
-                  Status do Streak
-                </label>
-                <select
-                  value={streakStatus}
-                  onChange={(e) => setStreakStatus(e.target.value)}
-                  className='border-2 border-primary_muted rounded-md p-2 text-secondary'
-                >
-                  <option value='all'>Todos</option>
-                  <option value='active'>Streak Ativo</option>
-                  <option value='broken'>Streak Quebrado</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
           <ReadersStats overview={stats?.overview} />
 
-          <div className='bg-primary_muted p-6 rounded-lg shadow-lg mb-8'>
-            <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
-              Engajamento ao Longo do Tempo
-            </h2>
-            <div className='h-64'>
-              {chartData.datasets.length > 0 && (
-                <Line options={chartOptions} data={chartData} />
-              )}
-            </div>
-          </div>
+          <ReadersAccessStatistics stats={stats} />
 
           <ReadersRanking users={stats?.topUsers} />
 
-          <div className='bg-primary_muted p-6 rounded-lg shadow-lg mb-8'>
-            <h2 className='text-lg font-bold font-montserrat text-secondary mb-4'>
-              Estatísticas de acessos
-            </h2>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <UTMStats title='Fonte' data={stats?.utmStats?.sources} />
-
-              <UTMStats title='Meio' data={stats?.utmStats?.mediums} />
-
-              <UTMStats title='Campanha' data={stats?.utmStats?.campaigns} />
-
-              <UTMStats title='Canal' data={stats?.utmStats?.channels} />
-            </div>
-          </div>
+          <ReadersEngagement chartData={chartData} />
         </div>
       </div>
     </div>

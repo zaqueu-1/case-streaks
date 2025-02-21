@@ -15,11 +15,16 @@ export default function Achievements({
         unlocked: false,
       }))
 
-    return achievementsData.achievements.map((achievement) => ({
-      ...achievement,
-      unlocked:
-        achievement.condition === "true" ? true : eval(achievement.condition),
-    }))
+    return achievementsData.achievements
+      .map((achievement) => ({
+        ...achievement,
+        unlocked:
+          achievement.condition === "true" ? true : eval(achievement.condition),
+      }))
+      .sort((a, b) => {
+        if (a.unlocked === b.unlocked) return 0
+        return a.unlocked ? -1 : 1
+      })
   }, [stats])
 
   useEffect(() => {
@@ -35,7 +40,7 @@ export default function Achievements({
           {achievements.map((achievement) => (
             <div key={achievement.id} className='flex flex-col items-center'>
               <div
-                className={`group relative flex flex-col items-center justify-center p-3 rounded-full aspect-square border-4 transition-all duration-200 hover:scale-105 ${
+                className={`group relative flex flex-col items-center justify-center p-3 rounded-full aspect-square border-4 transition-all duration-200 hover:scale-105 hover:border-transparent ${
                   achievement.unlocked
                     ? "bg-white border-primary_muted"
                     : "border-gray-200 bg-gray-50 opacity-50"
@@ -44,7 +49,7 @@ export default function Achievements({
                 <span className='text-3xl'>{achievement.icon}</span>
                 <div className='absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white rounded-full'>
                   <p className='text-xs text-secondary_muted text-center px-3'>
-                    {achievement.unlocked ? achievement.description : null}
+                    {achievement.description}
                   </p>
                 </div>
               </div>

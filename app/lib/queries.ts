@@ -119,18 +119,31 @@ export const queries = {
       SELECT SUM(is_consecutive) as days
       FROM streak_count
       WHERE access_date >= (
-        SELECT access_date
-        FROM streak_count
-        WHERE is_consecutive = 0
-        ORDER BY access_date DESC
-        LIMIT 1
+        SELECT COALESCE(
+          (
+            SELECT access_date
+            FROM streak_count
+            WHERE is_consecutive = 0
+            ORDER BY access_date DESC
+            LIMIT 1
+          ),
+          (SELECT MIN(access_date) FROM streak_count)
+        )
       )
     )
     SELECT 
       CASE 
         WHEN EXISTS (
           SELECT 1 FROM dates 
-          WHERE access_date = CURRENT_DATE
+          WHERE access_date >= CURRENT_DATE - INTERVAL '1 day'
+            AND (
+              access_date = CURRENT_DATE 
+              OR EXTRACT(DOW FROM CURRENT_DATE) = 0
+              OR (
+                access_date = CURRENT_DATE - INTERVAL '1 day'
+                AND CURRENT_TIME < TIME '23:59:59'
+              )
+            )
         ) THEN COALESCE((SELECT days FROM current_streak), 1)
         ELSE 0
       END as current_streak
@@ -279,7 +292,41 @@ export const queries = {
         u.level,
         COALESCE(COUNT(DISTINCT DATE(timezone('America/Sao_Paulo', a.timestamp))), 0) as unique_days,
         COALESCE(COUNT(a.id), 0) as total_accesses,
-        COALESCE(MAX(timezone('America/Sao_Paulo', a.timestamp)), timezone('America/Sao_Paulo', u.created_at)) as last_access
+        COALESCE(MAX(timezone('America/Sao_Paulo', a.timestamp)), timezone('America/Sao_Paulo', u.created_at)) as last_access,
+        COALESCE((
+          WITH dates AS (
+            SELECT DISTINCT DATE(timezone('America/Sao_Paulo', a2.timestamp)) as access_date
+            FROM accesses a2
+            WHERE a2.user_id = u.id
+              AND EXTRACT(DOW FROM timezone('America/Sao_Paulo', a2.timestamp)) != 0
+            ORDER BY access_date
+          ),
+          streak_groups AS (
+            SELECT 
+              access_date,
+              CASE
+                WHEN LAG(access_date) OVER (ORDER BY access_date) IS NULL THEN 1
+                WHEN access_date - LAG(access_date) OVER (ORDER BY access_date) = 1 THEN 0
+                WHEN access_date - LAG(access_date) OVER (ORDER BY access_date) = 2 
+                  AND EXTRACT(DOW FROM access_date - INTERVAL '1 day') = 0 THEN 0
+                ELSE 1
+              END as is_new_streak
+            FROM dates
+          ),
+          streaks AS (
+            SELECT 
+              access_date,
+              SUM(is_new_streak) OVER (ORDER BY access_date) as streak_id
+            FROM streak_groups
+          ),
+          streak_lengths AS (
+            SELECT COUNT(*) as length
+            FROM streaks
+            GROUP BY streak_id
+          )
+          SELECT COALESCE(MAX(length), 0)
+          FROM streak_lengths
+        ), 0) as max_streak
       FROM users u
       LEFT JOIN accesses a ON u.id = a.user_id
       WHERE u.email NOT LIKE '%@admin.com'
@@ -298,11 +345,13 @@ export const queries = {
         SELECT 
           COALESCE(utm_source, 'unknown') as value,
           COUNT(*) as count,
-          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage,
+          post_id,
+          timestamp
         FROM accesses a
         JOIN users u ON a.user_id = u.id
         WHERE u.email NOT LIKE '%@admin.com'
-        GROUP BY utm_source
+        GROUP BY utm_source, post_id, timestamp
         ORDER BY 
           CASE WHEN COALESCE(utm_source, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
           COALESCE(utm_source, 'unknown') ASC
@@ -311,11 +360,13 @@ export const queries = {
         SELECT 
           COALESCE(utm_medium, 'unknown') as value,
           COUNT(*) as count,
-          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage,
+          post_id,
+          timestamp
         FROM accesses a
         JOIN users u ON a.user_id = u.id
         WHERE u.email NOT LIKE '%@admin.com'
-        GROUP BY utm_medium
+        GROUP BY utm_medium, post_id, timestamp
         ORDER BY 
           CASE WHEN COALESCE(utm_medium, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
           COALESCE(utm_medium, 'unknown') ASC
@@ -324,11 +375,13 @@ export const queries = {
         SELECT 
           COALESCE(utm_campaign, 'unknown') as value,
           COUNT(*) as count,
-          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage,
+          post_id,
+          timestamp
         FROM accesses a
         JOIN users u ON a.user_id = u.id
         WHERE u.email NOT LIKE '%@admin.com'
-        GROUP BY utm_campaign
+        GROUP BY utm_campaign, post_id, timestamp
         ORDER BY 
           CASE WHEN COALESCE(utm_campaign, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
           COALESCE(utm_campaign, 'unknown') ASC
@@ -337,21 +390,35 @@ export const queries = {
         SELECT 
           COALESCE(utm_channel, 'unknown') as value,
           COUNT(*) as count,
-          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage
+          ROUND((COUNT(*)::numeric / NULLIF((SELECT total FROM total_accesses), 0)::numeric * 100), 2) as percentage,
+          post_id,
+          timestamp
         FROM accesses a
         JOIN users u ON a.user_id = u.id
         WHERE u.email NOT LIKE '%@admin.com'
-        GROUP BY utm_channel
+        GROUP BY utm_channel, post_id, timestamp
         ORDER BY 
           CASE WHEN COALESCE(utm_channel, 'unknown') = 'unknown' THEN 1 ELSE 0 END,
           COALESCE(utm_channel, 'unknown') ASC
+      ),
+      posts_data AS (
+        SELECT DISTINCT
+          post_id as id,
+          COALESCE(
+            SUBSTRING(post_id FROM 6), -- Remove 'post_' prefix
+            post_id
+          ) as title
+        FROM accesses
+        WHERE post_id IS NOT NULL
+        ORDER BY post_id
       )
       SELECT json_build_object(
         'sources', (SELECT json_agg(sources_data.*) FROM sources_data),
         'mediums', (SELECT json_agg(mediums_data.*) FROM mediums_data),
         'campaigns', (SELECT json_agg(campaigns_data.*) FROM campaigns_data),
         'channels', (SELECT json_agg(channels_data.*) FROM channels_data)
-      ) as utm_data
+      ) as utm_data,
+      (SELECT json_agg(posts_data.*) FROM posts_data) as posts
     )
     SELECT 
       json_build_object(
@@ -369,6 +436,10 @@ export const queries = {
         ),
         'utmStats', (
           SELECT utm_data
+          FROM utm_stats
+        ),
+        'posts', (
+          SELECT posts
           FROM utm_stats
         )
       ) as admin_stats
