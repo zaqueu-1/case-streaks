@@ -2,7 +2,6 @@ import { query } from "./postgres"
 
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000
-const MIN_INTERVAL_SECONDS = 5
 
 interface VerificationResult {
   isDuplicate: boolean

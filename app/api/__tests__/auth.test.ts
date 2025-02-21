@@ -2,10 +2,8 @@ import { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { query } from "../../lib/postgres"
 import { middleware } from "../../../middleware"
-import { authOptions } from "../auth/[...nextauth]/route"
 import { jest, describe, it, expect, beforeEach } from "@jest/globals"
 import { QueryResult } from "pg"
-import CredentialsProvider from "next-auth/providers/credentials"
 
 jest.mock("next-auth/jwt")
 jest.mock("../../lib/postgres")

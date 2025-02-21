@@ -11,7 +11,21 @@ type SortKey =
   | "last_access"
 type SortDirection = "asc" | "desc"
 
-function ReadersRanking({ users }: { users: any }) {
+interface Reader {
+  email: string
+  points: number
+  level: number
+  unique_days: number
+  max_streak: number
+  total_accesses: number
+  last_access: string | null
+}
+
+interface ReadersRankingProps {
+  users: Reader[] | undefined
+}
+
+export default function ReadersRanking({ users }: ReadersRankingProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortConfig, setSortConfig] = useState<{
     key: SortKey
@@ -22,12 +36,9 @@ function ReadersRanking({ users }: { users: any }) {
   })
 
   const handleSort = (key: SortKey) => {
-    setSortConfig((currentSort) => ({
+    setSortConfig((prev) => ({
       key,
-      direction:
-        currentSort.key === key && currentSort.direction === "desc"
-          ? "asc"
-          : "desc",
+      direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc",
     }))
   }
 
@@ -40,17 +51,30 @@ function ReadersRanking({ users }: { users: any }) {
       )
       .sort((a, b) => {
         if (sortConfig.key === "last_access") {
-          const dateA = new Date(a[sortConfig.key]).getTime()
-          const dateB = new Date(b[sortConfig.key]).getTime()
+          const dateA = a[sortConfig.key]
+            ? new Date(a[sortConfig.key] as string).getTime()
+            : 0
+          const dateB = b[sortConfig.key]
+            ? new Date(b[sortConfig.key] as string).getTime()
+            : 0
           return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA
         }
 
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? -1 : 1
+        const valueA = a[sortConfig.key]
+        const valueB = b[sortConfig.key]
+
+        if (typeof valueA === "number" && typeof valueB === "number") {
+          return sortConfig.direction === "asc"
+            ? valueA - valueB
+            : valueB - valueA
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? 1 : -1
+
+        if (typeof valueA === "string" && typeof valueB === "string") {
+          return sortConfig.direction === "asc"
+            ? valueA.localeCompare(valueB)
+            : valueB.localeCompare(valueA)
         }
+
         return 0
       })
   }, [users, searchTerm, sortConfig])
@@ -93,9 +117,7 @@ function ReadersRanking({ users }: { users: any }) {
       </div>
 
       <div className='overflow-x-auto'>
-        <div
-          className='max-h-[500px] overflow-y-auto rounded-lg'
-        >
+        <div className='max-h-[500px] overflow-y-auto rounded-lg'>
           <style jsx>{`
             div::-webkit-scrollbar {
               width: 8px;
@@ -161,7 +183,7 @@ function ReadersRanking({ users }: { users: any }) {
               </tr>
             </thead>
             <tbody className='divide-y divide-white/50'>
-              {filteredAndSortedUsers.map((user: any, index: number) => (
+              {filteredAndSortedUsers.map((user: Reader, index: number) => (
                 <tr
                   key={index}
                   className={index % 2 === 0 ? "bg-[#fff3c9]" : "bg-[#fee594]"}
@@ -185,7 +207,7 @@ function ReadersRanking({ users }: { users: any }) {
                     {user.total_accesses}
                   </td>
                   <td className='px-4 py-3 whitespace-nowrap text-sm text-secondary'>
-                    {formatDate(user.last_access)}
+                    {user.last_access ? formatDate(user.last_access) : "-"}
                   </td>
                 </tr>
               ))}
@@ -196,5 +218,3 @@ function ReadersRanking({ users }: { users: any }) {
     </div>
   )
 }
-
-export default ReadersRanking

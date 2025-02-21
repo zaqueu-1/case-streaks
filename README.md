@@ -9,6 +9,7 @@ Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a Th
 - Login via e-mail
 - Autenticação persistente com Next-Auth
 - Proteção de rotas baseada em perfil (admin/usuário)
+- Testes automatizados para fluxos de autenticação
 
 ### 📊 Dashboard do Usuário
 
@@ -26,16 +27,21 @@ Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a Th
 - Média de streak dos usuários
 - Gráfico de engajamento (usuários x acessos)
 - Ranking completo de leitores com:
-  - Pontuação
-  - Nível
-  - Dias únicos
+  - Pontuação e nível
+  - Dias únicos de leitura
+  - Streak máximo
   - Total de acessos
-  - Último acesso
-- Estatísticas de UTM com:
+  - Último acesso registrado
+  - Busca por e-mail
+  - Ordenação por todas as colunas
+- Estatísticas detalhadas de UTM com:
   - Fontes
   - Meios
   - Campanhas
   - Canais
+  - Filtros por newsletter específica
+  - Filtros por período
+  - Visualização em gráficos e tabelas
 
 ### 🎯 Sistema de Gamificação
 
@@ -58,6 +64,38 @@ Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a Th
 - Proteção contra acessos duplicados
 - Timezone configurada para São Paulo
 - Sistema de webhooks para registro de acessos
+- Testes automatizados com Jest
+
+## 🧪 Testes
+
+O projeto utiliza Jest para testes automatizados, cobrindo:
+
+### Testes de API
+
+- Autenticação (`auth.test.ts`)
+  - Fluxos de login
+  - Proteção de rotas
+  - Redirecionamentos baseados em perfil
+- Estatísticas (`stats.test.ts`)
+  - Cálculo de streaks
+  - Pontuação e níveis
+  - Dados de usuário
+- Webhook (`webhook.test.ts`)
+  - Registro de acessos
+  - Prevenção de duplicatas
+  - Parâmetros UTM
+- Admin (`admin.test.ts`)
+  - Estatísticas gerais
+  - Ranking de usuários
+  - Métricas de engajamento
+
+### Cobertura
+
+- Mínimo de 80% de cobertura em:
+  - Branches
+  - Funções
+  - Linhas
+  - Statements
 
 ## 🛠️ Tecnologias
 
@@ -68,6 +106,7 @@ Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a Th
 - Docker
 - Chart.js
 - Next-Auth
+- Jest
 
 ## 🚀 Como Executar
 
@@ -95,6 +134,12 @@ cp .env.example .env.local
 docker compose up -d
 ```
 
+5. Execute os testes
+
+```bash
+npm test
+```
+
 ## 📝 Variáveis de Ambiente
 
 ```env
@@ -110,6 +155,9 @@ NEXTAUTH_URL=localhost:3000
 - `npm run start`: Inicia o servidor de produção
 - `npm run lint`: Executa o linter
 - `npm run format`: Formata o código
+- `npm test`: Executa os testes
+- `npm run test:watch`: Executa os testes em modo watch
+- `npm run test:coverage`: Gera relatório de cobertura de testes
 
 ## 📁 Estrutura do Projeto
 
