@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { query } from "../../lib/postgres"
+import { query } from "@/app/lib/postgres"
 
 interface HealthCheckResponse {
   status: string

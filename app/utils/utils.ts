@@ -1,5 +1,5 @@
-import streakMessages from "../data/streak-messages.json"
-import { LevelInfo } from "../types/news"
+import streakMessages from "@/app/data/streak-messages.json"
+import { LevelInfo } from "@/app/types/news"
 
 export function calculateLevelAndPoints(totalPoints: number): LevelInfo {
   const level = Math.floor(totalPoints / 10) + 1

@@ -94,8 +94,8 @@ function UTMStats({
       {
         data: filteredData.map((entry) => entry.count),
         backgroundColor: colors,
-        borderColor: "#cecece59",
-        borderWidth: 1,
+        borderColor: "#cecece73",
+        borderWidth: 2,
       },
     ],
   }

@@ -11,6 +11,16 @@ export interface Access {
   utm_channel?: string
 }
 
+export interface RecentAccess {
+  id: string
+  post_id: string
+  timestamp: string | Date
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_channel?: string
+}
+
 export interface User {
   id: string
   email: string
@@ -38,14 +48,19 @@ export interface UtmStats {
 export interface StatsResponse {
   email: string
   totalAccesses: number
-  firstAccess: Date
-  lastAccess: Date
+  firstAccess: string | Date
+  lastAccess: string | Date
   currentStreak: number
   longestStreak: number
   points: number
   level: number
   pointsToNextLevel: number
   currentLevelPoints: number
-  utmStats: UtmStats
-  recentAccesses: Access[]
+  utmStats: {
+    sources: Record<string, number>
+    mediums: Record<string, number>
+    campaigns: Record<string, number>
+    channels: Record<string, number>
+  }
+  recentAccesses: RecentAccess[]
 }

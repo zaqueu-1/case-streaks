@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { query } from "../../lib/postgres"
-import { queries } from "../../lib/queries"
+import { query } from "@/app/lib/postgres"
+import { queries } from "@/app/lib/queries"
 import { NextRequest } from "next/server"
 
 interface CleanupResponse {

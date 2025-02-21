@@ -28,9 +28,12 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = pathname === "/admin"
   const isDashboardPath = pathname === "/dashboard"
 
+  // Garantir que o pathname seja uma string válida
+  const safePathname = pathname || "/"
+
   if (!isAuthenticated && !isPublicPath && !isWebhookPath) {
     const url = new URL("/login", request.url)
-    url.searchParams.set("callbackUrl", pathname)
+    url.searchParams.set("callbackUrl", safePathname)
     return NextResponse.redirect(url)
   }
 

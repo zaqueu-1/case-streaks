@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { AccessCalendarProps } from "../../types/components"
+import { RecentAccess } from "@/app/types/news"
 
 interface WeekDay {
   key: string

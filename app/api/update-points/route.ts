@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { query } from "../../lib/postgres"
-import { calculateLevelAndPoints } from "../../utils/utils"
+import { query } from "@/app/lib/postgres"
+import { calculateLevelAndPoints } from "@/app/utils/utils"
 
 interface UpdateResult {
   message?: string

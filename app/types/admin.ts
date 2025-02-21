@@ -1,9 +1,11 @@
+export interface StatsOverview {
+  total_users: number
+  active_users: number
+  avg_streak: number
+}
+
 export interface AdminStats {
-  overview: {
-    total_users: number
-    active_users: number
-    avg_streak: number
-  }
+  overview: StatsOverview
   engagement: Array<{
     date: string
     users: number

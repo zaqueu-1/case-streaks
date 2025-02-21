@@ -1,4 +1,4 @@
-import { Access, StatsResponse } from "./news"
+import { Access, StatsResponse, RecentAccess } from "./news"
 
 export interface StatsCardProps {
   icon: string
@@ -16,7 +16,7 @@ export interface ShareButtonProps {
 }
 
 export interface AccessCalendarProps {
-  accesses: Access[]
+  accesses: RecentAccess[]
 }
 
 export interface Achievement {

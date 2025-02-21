@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import { query } from "../../lib/postgres"
-import { queries } from "../../lib/queries"
-import { StatsResponse } from "../../types/news"
+import { query } from "@/app/lib/postgres"
+import { queries } from "@/app/lib/queries"
+import { StatsResponse } from "@/app/types/news"
 import { NextRequest } from "next/server"
-import { calculateLevelAndPoints } from "../../utils/utils"
+import { calculateLevelAndPoints } from "@/app/utils/utils"
 
 export async function GET(
   req: NextRequest,

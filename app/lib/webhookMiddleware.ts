@@ -1,4 +1,4 @@
-import { query } from "./postgres"
+import { query } from "@/app/lib/postgres"
 
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000

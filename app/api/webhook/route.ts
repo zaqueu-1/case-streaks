@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { withTransaction, query } from "../../lib/postgres"
-import { queries } from "../../lib/queries"
-import { verifyWebhook } from "../../lib/webhookMiddleware"
-import { calculateLevelAndPoints } from "../../utils/utils"
+import { withTransaction, query } from "@/app/lib/postgres"
+import { queries } from "@/app/lib/queries"
+import { verifyWebhook } from "@/app/lib/webhookMiddleware"
+import { calculateLevelAndPoints } from "@/app/utils/utils"
 
 interface WebhookResponse {
   message: string

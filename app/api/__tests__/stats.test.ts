@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server"
-import { GET } from "../stats/route"
-import { query } from "../../lib/postgres"
+import { GET } from "@/app/api/stats/route"
+import { query } from "@/app/lib/postgres"
 import { jest, describe, it, expect, beforeEach } from "@jest/globals"
 import { QueryResult } from "pg"
 
-jest.mock("../../lib/postgres")
+jest.mock("@/app/lib/postgres")
 
 type MockQuery = jest.MockedFunction<typeof query>
 
