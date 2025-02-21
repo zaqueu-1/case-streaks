@@ -14,7 +14,6 @@ import {
   Legend,
   ChartData,
 } from "chart.js"
-import { Line } from "react-chartjs-2"
 import { formatDate } from "../utils/utils"
 import { AdminStats } from "../types/admin"
 import ReadersRanking from "@/app/components/ReadersRanking/ReadersRanking"

@@ -64,9 +64,6 @@ export async function verifyWebhook(req: Request): Promise<VerificationResult> {
       )
 
       const lastAccess = lastAccessResult.rows[0]?.timestamp
-      const minTimestamp = lastAccess
-        ? new Date(new Date(lastAccess).getTime() - 60 * 1000) // 1 minuto em milissegundos
-        : new Date(0)
 
       // Verifica se existe acesso recente para este post
       const result = await query(

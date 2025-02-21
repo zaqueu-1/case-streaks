@@ -1,5 +1,4 @@
 export const queries = {
-  // Usuários
   getUserByEmail: `
     SELECT * FROM users WHERE email = $1
   `,
@@ -11,7 +10,6 @@ export const queries = {
     RETURNING *
   `,
 
-  // Acessos
   getRecentAccesses: `
     SELECT * FROM accesses 
     WHERE user_id = $1 
@@ -25,7 +23,6 @@ export const queries = {
     RETURNING *
   `,
 
-  // Estatísticas
   getUserStats: `
     WITH user_data AS (
       SELECT 
@@ -59,7 +56,6 @@ export const queries = {
     FROM user_data ud
   `,
 
-  // Limpeza
   removeDuplicateAccesses: `
     WITH grouped_accesses AS (
       SELECT 
@@ -92,7 +88,7 @@ export const queries = {
     RETURNING *
   `,
 
-  // Contagem de dias úteis (excluindo domingos)
+  // excluindo domingos
   getCurrentStreak: `
     WITH dates AS (
       SELECT DISTINCT DATE(timestamp AT TIME ZONE 'America/Sao_Paulo') as access_date
@@ -189,7 +185,6 @@ export const queries = {
     ) as longest_streak
   `,
 
-  // UTM Stats
   getUtmStats: `
     SELECT 
       json_build_object(
