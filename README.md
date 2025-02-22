@@ -288,3 +288,19 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 3. Adicionar um identificador ou link de acesso rápido que direcione para alguma matéria do dia que o usuário contabilizou um streak;
 4. Sistema de ranking que mostre os usuários mais engajados, com maiores streaks ou com maior nível (e sua posição em relação a eles);
 5. Expandir área administrativa com mais métricas e controles.
+
+## Importando o Banco de Dados
+
+O projeto inclui um arquivo `db.sql` com a estrutura e dados iniciais do banco de dados. Para importá-lo:
+
+1. Certifique-se que o container do PostgreSQL está rodando:
+
+```bash
+docker-compose up -d db
+```
+
+2. Importe o arquivo SQL:
+
+```bash
+docker exec -i case-streaks-db psql -U postgres case_streaks < db.sql
+```
