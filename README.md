@@ -2,7 +2,7 @@
 
 Desafio Técnico/Case da empresa Waffle para uma de suas principais marcas: a The News. Trata-se de uma aplicação web para acompanhar o progresso de leitura dos assinantes da newsletter, gamificando a experiência por meio de um sistema de conquistas, níveis e streaks.
 ## Apresentação
-[![Apresentação](http://img.youtube.com/vi/njfEmWaKBMA&si=aZvJDIy2xJISn6VI/0.jpg)](https://youtu.be/njfEmWaKBMA?si=MZSIj7jkkoaOZSqd "Desafio Técnico JR | Waffle")
+[![Apresentação](http://img.youtube.com/vi/https://youtu.be/njfEmWaKBMA?si=MZSIj7jkkoaOZSqd/0.jpg)](https://youtu.be/njfEmWaKBMA?si=MZSIj7jkkoaOZSqd "Desafio Técnico JR | Waffle")
 
 ## 🚀 Features
 
