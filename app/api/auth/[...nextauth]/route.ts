@@ -1,6 +1,6 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { query } from "@/app/lib/postgres"
+import supabase from "@/app/lib/supabase"
 import { NextAuthOptions } from "next-auth"
 import { JWT } from "next-auth/jwt"
 import { Session } from "next-auth"
@@ -21,7 +21,12 @@ interface CustomSession extends Session {
   }
 }
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 dias
+  },
   providers: [
     CredentialsProvider({
       name: "Email",
@@ -30,27 +35,59 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<CustomUser | null> {
         try {
+          console.log("Iniciando autenticação para:", credentials?.email);
+          console.log("URL do Supabase:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+          
           if (!credentials?.email) {
+            console.error("Email não fornecido");
             throw new Error("Email é obrigatório")
           }
 
-          const result = await query("SELECT * FROM users WHERE email = $1", [
-            credentials.email,
-          ])
+          try {
+            const { data: testData, error: testError } = await supabase
+              .from('users')
+              .select('*', { count: 'exact', head: true })
+            
+            if (testError) {
+              console.error("Erro ao testar conexão com o Supabase:", testError);
+              throw testError;
+            }
+            
+            console.log("Conexão com o Supabase OK, resultado:", testData);
+          } catch (dbError) {
+            console.error("Erro ao testar conexão com o Supabase:", dbError);
+            throw new Error("Erro de conexão com o banco de dados. Tente novamente mais tarde.");
+          }
 
-          if (result.rows.length === 0) {
+          // Buscar usuário pelo email
+          console.log("Buscando usuário com email:", credentials.email);
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', credentials.email)
+            .single();
+
+          if (error) {
+            console.error("Erro ao buscar usuário:", error);
+            throw new Error("Erro ao buscar usuário. Tente novamente mais tarde.");
+          }
+
+          console.log("Resultado da consulta:", data ? "Usuário encontrado" : "Usuário não encontrado");
+
+          if (!data) {
+            console.error("Email não encontrado:", credentials.email);
             throw new Error(
               "Email não encontrado! Tem certeza que está usando o mesmo e-mail que recebe a newsletter?",
             )
           }
 
-          const user = result.rows[0]
+          console.log("Usuário autenticado com sucesso:", data.email);
 
           return {
-            id: user.id,
-            email: user.email,
-            name: user.email.split("@")[0],
-            isAdmin: user.is_admin || false,
+            id: data.id,
+            email: data.email,
+            name: data.email.split("@")[0],
+            isAdmin: data.is_admin || false,
           }
         } catch (error) {
           console.error("Erro na autenticação:", error)
@@ -83,7 +120,7 @@ export const authOptions: NextAuthOptions = {
       }
     },
   },
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
 }
 
 const handler = NextAuth(authOptions)

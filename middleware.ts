@@ -3,23 +3,9 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl
-  const isWebhookRequest = searchParams.has("email") && searchParams.has("id")
-  const isWebhookPath = pathname === "/api/webhook"
+  const { pathname } = request.nextUrl
   const isRootPath = pathname === "/"
 
-  // Se for uma requisição de webhook na raiz, redireciona para /api/webhook
-  if (isRootPath && isWebhookRequest) {
-    console.log(
-      "Redirecionando webhook da raiz para /api/webhook:",
-      searchParams.toString(),
-    )
-    const url = request.nextUrl.clone()
-    url.pathname = "/api/webhook"
-    return NextResponse.rewrite(url)
-  }
-
-  // Se for uma requisição normal na raiz ou outras rotas protegidas
   const token = await getToken({ req: request })
   const isAuthenticated = !!token
   const isAdmin = token?.isAdmin || false
@@ -28,10 +14,9 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = pathname === "/admin"
   const isDashboardPath = pathname === "/dashboard"
 
-  // Garantir que o pathname seja uma string válida
   const safePathname = pathname || "/"
 
-  if (!isAuthenticated && !isPublicPath && !isWebhookPath) {
+  if (!isAuthenticated && !isPublicPath) {
     const url = new URL("/login", request.url)
     url.searchParams.set("callbackUrl", safePathname)
     return NextResponse.redirect(url)
@@ -51,7 +36,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  if (isRootPath && !isWebhookRequest) {
+  if (isRootPath) {
     return NextResponse.redirect(
       new URL(isAdmin ? "/admin" : "/dashboard", request.url),
     )
@@ -61,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard", "/admin", "/api/webhook"],
+  matcher: ["/", "/login", "/dashboard", "/admin"],
 }

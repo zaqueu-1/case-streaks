@@ -1,40 +1,42 @@
-import { NextResponse } from "next/server"
 import { query } from "@/app/lib/postgres"
+import { NextRequest, NextResponse } from "next/server"
+import supabase from "@/app/lib/supabase"
 
-interface HealthCheckResponse {
-  status: string
-  timestamp: string
-  database: {
-    connected: boolean
-    error?: string
-  }
-}
-
-export async function GET(
-  req: Request,
-): Promise<NextResponse<HealthCheckResponse>> {
+export async function GET(req: NextRequest) {
+  const start = Date.now()
   try {
-    // Testa a conexão com o banco
-    await query("SELECT 1")
+    const { data, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      throw error;
+    }
+    
+    const dbLatency = Date.now() - start
+    const memoryUsage = process.memoryUsage()
 
     return NextResponse.json({
       status: "healthy",
+      uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       database: {
-        connected: true,
+        status: "connected",
+        latency: `${dbLatency}ms`,
+      },
+      memory: {
+        rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
       },
     })
   } catch (error) {
     console.error("Erro no healthcheck:", error)
-
     return NextResponse.json(
       {
         status: "unhealthy",
+        error: error instanceof Error ? error.message : "Erro desconhecido",
         timestamp: new Date().toISOString(),
-        database: {
-          connected: false,
-          error: error instanceof Error ? error.message : "Erro desconhecido",
-        },
       },
       { status: 500 },
     )

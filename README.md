@@ -104,7 +104,7 @@ O projeto utiliza Jest para testes automatizados, cobrindo:
 - Next.js com App Router
 - TypeScript
 - Tailwind CSS
-- PostgreSQL
+- PostgreSQL / Supabase
 - Docker
 - Chart.js
 - Next-Auth
@@ -142,13 +142,9 @@ docker compose up -d
 npm test
 ```
 
-## 📝 Variáveis de Ambiente
+## 🔄 Alternativa com Supabase
 
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5433/case_streaks
-NEXTAUTH_SECRET=YoJQvKdD+UtJkmK/JUhNbEDBrw30upbT0Utxhnl8LQs=
-NEXTAUTH_URL=localhost:3000
-```
+Este projeto também suporta o uso do [Supabase](https://supabase.com/) como alternativa ao PostgreSQL direto. O Supabase é uma alternativa open-source ao Firebase, oferecendo banco de dados PostgreSQL, autenticação, armazenamento e mais.
 
 ## 📦 Scripts Disponíveis
 
@@ -291,18 +287,50 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 4. Sistema de ranking que mostre os usuários mais engajados, com maiores streaks ou com maior nível (e sua posição em relação a eles);
 5. Expandir área administrativa com mais métricas e controles.
 
-## Importando o Banco de Dados
+### 2. Configuração de Cron Jobs
 
-O projeto inclui um arquivo `db.sql` com a estrutura e dados iniciais do banco de dados. Para importá-lo:
+#### Opção 1: Vercel Cron Jobs (Requer plano Pro ou Enterprise)
 
-1. Certifique-se que o container do PostgreSQL está rodando:
+Os cron jobs são configurados automaticamente através do arquivo `vercel.json`. 
+O projeto está configurado para executar a geração de dados aleatórios a cada hora.
 
-```bash
-docker-compose up -d db
+**Importante**: Para habilitar cron jobs na Vercel, você precisa ter um plano Pro ou Enterprise.
+
+#### Opção 2: GitHub Actions (Gratuito)
+
+Caso não tenha um plano pago da Vercel, este projeto inclui uma configuração alternativa usando GitHub Actions para simular os cron jobs.
+
+Para configurar:
+
+1. Seu projeto deve estar em um repositório GitHub
+2. Configure o secret `VERCEL_APP_URL` nas configurações do seu repositório
+3. O workflow está configurado no arquivo `.github/workflows/cron.yml`
+
+Para mais detalhes, consulte o guia `.github/CRON_SETUP.md`.
+
+### 3. Deploy
+
+1. Conecte seu repositório GitHub à Vercel
+2. Configure as variáveis de ambiente
+3. Clique em "Deploy"
+
+### 4. Verificação
+
+Após o deploy, verifique se:
+- A página de login carrega corretamente
+- O login com email funciona
+- As estatísticas são exibidas no dashboard
+- Os cron jobs estão executando (verifique os logs na Vercel)
+
+## Funcionalidades
+
+- **Autenticação:** Login por email
+- **Dashboard:** Visualização de estatísticas de acessos
+- **Admin:** Painel para administradores
+- **Cron Jobs:** Geração automática de acessos para simulação
+
+## Testes
+
 ```
-
-2. Importe o arquivo SQL:
-
-```bash
-docker exec -i case-streaks-db psql -U postgres case_streaks < db.sql
+npm run test
 ```

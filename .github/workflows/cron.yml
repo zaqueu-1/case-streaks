@@ -1,0 +1,17 @@
+name: Hourly Cron Job
+
+on:
+  schedule:
+    # Executa a cada hora (no minuto 0)
+    - cron: '0 * * * *'
+  # Permite execução manual para testes
+  workflow_dispatch:
+
+jobs:
+  cron-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Random Accesses Endpoint
+        run: |
+          curl -X GET ${{ secrets.VERCEL_APP_URL }}/api/cron/vercel-cron
+          echo "Cron job executado em $(date)" 

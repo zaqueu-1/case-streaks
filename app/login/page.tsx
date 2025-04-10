@@ -128,7 +128,7 @@ export default function LoginPage() {
             <div>
               <button
                 type='submit'
-                disabled={loading || !email}
+                disabled={loading}
                 className='w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-montserrat font-semibold text-secondary bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-primary/70 disabled:cursor-not-allowed'
               >
                 {loading ? (

@@ -2,6 +2,7 @@ import "./globals.css"
 import Providers from "./providers"
 import Script from "next/script"
 import Header from "./components/Header"
+import CronInitializer from "./components/CronInitializer"
 import "./healthcheck"
 import { ReactNode } from "react"
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body className='font-poppins bg-[#F9FAFB]' suppressHydrationWarning>
         <Providers>
+          <CronInitializer />
           <Header />
           <main>{children}</main>
         </Providers>

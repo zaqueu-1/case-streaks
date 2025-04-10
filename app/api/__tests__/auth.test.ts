@@ -80,17 +80,6 @@ describe("Auth API", () => {
       expect(response?.status).toBe(307)
       expect(response?.headers.get("location")).toContain("/dashboard")
     })
-
-    it("deve permitir acesso ao webhook sem autenticação", async () => {
-      ;(getToken as MockGetToken).mockResolvedValue(null)
-
-      const req = new NextRequest(
-        new URL("http://localhost/api/webhook?email=test@example.com&id=123"),
-      )
-      const response = await middleware(req)
-
-      expect(response?.status).toBe(200)
-    })
   })
 
   describe("Autenticação de Usuário", () => {
