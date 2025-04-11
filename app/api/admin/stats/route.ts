@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { query } from "../../../lib/postgres"
-import { queries } from "../../../lib/queries"
+import supabase from "@/app/lib/supabase"
 import { getToken } from "next-auth/jwt"
 import { NextRequest } from "next/server"
 
@@ -11,8 +10,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const result = await query(queries.getAdminStats)
-    const stats = result.rows[0]?.admin_stats || {
+    // Buscar estatísticas usando o Supabase
+    const { data: stats, error } = await supabase.rpc('get_admin_stats')
+
+    if (error) {
+      console.error("Erro ao buscar estatísticas administrativas:", error)
+      return NextResponse.json(
+        { error: "Erro interno do servidor" },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json(stats || {
       overview: {
         total_users: 0,
         active_users: 0,
@@ -26,9 +35,7 @@ export async function GET(req: NextRequest) {
         campaigns: [],
         channels: [],
       },
-    }
-
-    return NextResponse.json(stats)
+    })
   } catch (error) {
     console.error("Erro ao buscar estatísticas administrativas:", error)
     return NextResponse.json(
