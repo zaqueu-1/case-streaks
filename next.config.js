@@ -15,11 +15,6 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
-  skipMiddlewareUrlNormalize: true,
-  skipTrailingSlashRedirect: true,
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
   staticPageGenerationTimeout: 120,
   images: {
     remotePatterns: [
@@ -38,13 +33,16 @@ const nextConfig = {
       enabled: true,
     },
   },
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
-  generateBuildId: async () => {
-    return 'build-' + Date.now();
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "child_process": false,
+      "fs": false,
+      "net": false,
+      "tls": false,
+    }
+    return config
   },
-  generateEtags: false,
-  trailingSlash: false,
-  distDir: '.next',
   async rewrites() {
     return [
       {
@@ -77,26 +75,6 @@ const nextConfig = {
         ],
       },
     ]
-  },
-  onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
-  },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": path.resolve(__dirname),
-    }
-    
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      "child_process": false,
-      "fs": false,
-      "net": false,
-      "tls": false,
-    }
-    
-    return config
   },
 }
 
