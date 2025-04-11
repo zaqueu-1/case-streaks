@@ -3,9 +3,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  // Verificar se a solicitação é válida
-  if (!request.url || !request.nextUrl || !request.nextUrl.origin) {
-    console.error("URL inválida na requisição:", request.url)
+  // Verificação de segurança inicial
+  if (!request.nextUrl) {
     return NextResponse.next()
   }
 
@@ -21,38 +20,27 @@ export async function middleware(request: NextRequest) {
     const isAdminPath = pathname === "/admin"
     const isDashboardPath = pathname === "/dashboard"
 
-    // Garantir que o pathname seja seguro e nunca vazio
-    const safePathname = pathname || "/dashboard"
-    // Garantir que baseUrl seja válido
-    const baseUrl = request.nextUrl.origin || "https://casestreaks.vercel.app"
+    // Usar URL base segura para redirecionamentos
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin || "https://casestreaks.vercel.app"
 
     if (!isAuthenticated && !isPublicPath) {
-      // Criar redirecionamento manualmente em vez de usar new URL
-      const redirectUrl = `${baseUrl}/login?callbackUrl=${encodeURIComponent(safePathname)}`
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(`${baseUrl}/login${pathname !== "/" ? `?callbackUrl=${encodeURIComponent(pathname)}` : ""}`)
     }
 
     if (isAuthenticated && isPublicPath) {
-      // Redirecionar para dashboard ou admin sem usar new URL
-      const redirectUrl = `${baseUrl}${isAdmin ? '/admin' : '/dashboard'}`
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(`${baseUrl}${isAdmin ? '/admin' : '/dashboard'}`)
     }
 
     if (isAuthenticated && isAdmin && isDashboardPath) {
-      // Redirecionar para admin sem usar new URL
       return NextResponse.redirect(`${baseUrl}/admin`)
     }
 
     if (isAuthenticated && !isAdmin && isAdminPath) {
-      // Redirecionar para dashboard sem usar new URL
       return NextResponse.redirect(`${baseUrl}/dashboard`)
     }
 
-    if (isRootPath) {
-      // Redirecionar para dashboard ou admin sem usar new URL
-      const redirectUrl = `${baseUrl}${isAdmin ? '/admin' : '/dashboard'}`
-      return NextResponse.redirect(redirectUrl)
-    }
+    // Não redirecionamos a página inicial aqui para evitar conflitos com SSG
+    // O redirecionamento da página inicial é feito diretamente no componente com script
 
     return NextResponse.next()
   } catch (error) {
