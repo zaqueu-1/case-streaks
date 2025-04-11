@@ -117,11 +117,11 @@ export async function POST(req: Request) {
       )
     }
 
-    const { level, points: newPoints } = calculateLevelAndPoints(points)
+    const { level } = calculateLevelAndPoints(points)
 
     const { data, error } = await supabase
       .from('users')
-      .update({ points: newPoints, level })
+      .update({ points, level })
       .eq('email', email)
       .select()
       .single()
