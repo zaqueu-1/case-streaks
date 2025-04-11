@@ -1,28 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Modo standalone (caso use Vercel Serverless Functions)
   output: "standalone",
-  
-  // Desabilitar otimização e pré-renderização
-  swcMinify: false,
-  optimizeFonts: false,
-  compress: false,
 
-  // Configurações de imagem básicas
+  // trailingSlash, se você realmente precisa desse comportamento
+  trailingSlash: true,
+
+  // Mover para fora de "experimental"
+  outputFileTracingExcludes: [
+    "**/_not-found/**",
+  ],
+
+  // Configurações de imagem (se forem necessárias mesmo)
   images: {
     domains: ["media.beehiiv.com", "app.thenewscc.com.br"],
-    unoptimized: true,
   },
-  
-  // Experimental para App Router
-  experimental: {
-    serverActions: true,
-    // Recursos experimentais para contornar problemas de URL
-    serverComponentsExternalPackages: ['url'],
-    appDocumentPreloading: false,
-    adjustFontFallbacks: false,
-    optimizePackageImports: false,
-    optimizeCss: false
-  }
-}
+};
 
-export default nextConfig
+export default nextConfig;
