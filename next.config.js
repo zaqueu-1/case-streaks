@@ -4,6 +4,12 @@ import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+if (typeof global.URL === 'undefined') {
+  global.URL = function() {
+    return { pathname: '/' };
+  };
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
@@ -14,6 +20,7 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+  staticPageGenerationTimeout: 120,
   images: {
     remotePatterns: [
       {
@@ -32,6 +39,12 @@ const nextConfig = {
     },
   },
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  generateBuildId: async () => {
+    return 'build-' + Date.now();
+  },
+  generateEtags: false,
+  trailingSlash: false,
+  distDir: '.next',
   async rewrites() {
     return [
       {
@@ -69,7 +82,7 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
-  webpack: (config) => {
+  webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname),
