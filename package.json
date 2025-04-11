@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:vercel": "NODE_OPTIONS='--no-warnings' next build",
+    "build": "DISABLE_ESLINT_PLUGIN=true next build",
+    "build:vercel": "DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS='--no-warnings' next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

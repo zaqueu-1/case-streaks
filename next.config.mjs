@@ -44,10 +44,6 @@ const nextConfig = {
         destination: "/api/healthcheck",
       },
       {
-        source: "/_error",
-        destination: "/dashboard",
-      },
-      {
         source: "/404",
         destination: "/dashboard",
       },

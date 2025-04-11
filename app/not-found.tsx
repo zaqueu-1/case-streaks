@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
+// Forçar renderização estática
 export const dynamic = 'force-static';
+export const revalidate = false;
 
 export default function NotFound() {
   return (
