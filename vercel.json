@@ -1,5 +1,7 @@
 {
   "framework": "nextjs",
-  "buildCommand": "NEXT_SKIP_PREFLIGHT_CHECK=true NEXT_SKIP_APP_STATIC_EVALUATION=1 npm run build",
-  "installCommand": "npm ci"
+  "buildCommand": "chmod +x build-clean.sh && ./build-clean.sh",
+  "installCommand": "npm ci",
+  "ignoreCommand": "echo 'Skipping deployment if .vercelignore exists'",
+  "outputDirectory": ".next"
 } 

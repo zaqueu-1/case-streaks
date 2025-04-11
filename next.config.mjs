@@ -2,7 +2,14 @@
 const nextConfig = {
   output: "standalone",
   
-  // Pular completamente a pré-renderização estática
+  // Especificar as extensões de página explicitamente
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  
+  // Desabilitar a pré-renderização de páginas que começam com underscore
+  unstable_excludeDefaultMomentLocales: true,
+  disableStaticImages: true,
+  
+  // Pular completamente a pré-renderização estática de rotas especiais
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
   
@@ -26,6 +33,13 @@ const nextConfig = {
     serverActions: {
       enabled: true,
     },
+  },
+  
+  // Configuração para excluir páginas específicas da pré-renderização
+  exportPathMap: async function (defaultPathMap) {
+    // Remover explicitamente a página _not-found do mapa de exportação
+    delete defaultPathMap['/_not-found'];
+    return defaultPathMap;
   },
 }
 
