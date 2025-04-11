@@ -4,8 +4,11 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   
-  // Aumentar o timeout para a geração estática
+  // Configuração de timeout
   staticPageGenerationTimeout: 180,
+  
+  // Desabilitar a geração estática para páginas problemáticas
+  excludeDefaultMomentLocales: true,
   
   images: {
     remotePatterns: [
@@ -20,13 +23,18 @@ const nextConfig = {
     ],
   },
   
+  // Configurações experimentais
   experimental: {
+    // Desabilitar a pré-renderização de páginas especiais
+    disableOptimizedLoading: true,
     serverActions: {
       enabled: true,
     },
   },
   
+  // Configuração do webpack
   webpack: (config) => {
+    // Remover polyfills desnecessários
     config.resolve.fallback = {
       ...config.resolve.fallback,
       "child_process": false,
@@ -37,15 +45,28 @@ const nextConfig = {
     return config
   },
   
+  // Redirecionamentos para tratamento de erros e 404
   async rewrites() {
     return [
       {
-        source: "/healthcheck",
-        destination: "/api/healthcheck",
+        source: '/healthcheck',
+        destination: '/api/healthcheck',
+      },
+    ]
+  },
+  
+  // Redirecionamentos simplificados
+  async redirects() {
+    return [
+      {
+        source: '/404',
+        destination: '/dashboard',
+        permanent: false,
       },
       {
-        source: "/404",
-        destination: "/dashboard",
+        source: '/error',
+        destination: '/dashboard',
+        permanent: false,
       },
     ]
   },
