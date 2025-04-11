@@ -4,6 +4,9 @@ import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Definir URL base padrão para uso durante o build
+process.env.NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://casestreaks.vercel.app"
+
 // Melhorar o polyfill para URL quando não estiver disponível
 if (typeof global.URL === 'undefined') {
   global.URL = class URL {
@@ -46,6 +49,10 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   staticPageGenerationTimeout: 120,
+  // Adicionar variáveis de ambiente públicas
+  env: {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "https://casestreaks.vercel.app",
+  },
   images: {
     remotePatterns: [
       {
@@ -71,6 +78,13 @@ const nextConfig = {
       "net": false,
       "tls": false,
     }
+    
+    // Adicionar fallback para URL no webpack
+    if (!config.resolve.fallback) {
+      config.resolve.fallback = {};
+    }
+    config.resolve.fallback.url = require.resolve('url/');
+    
     return config
   },
   async rewrites() {
