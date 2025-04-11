@@ -1,11 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build:vercel",
-  "installCommand": "npm ci",
-  "regions": ["bru1"],
-  "env": {
-    "NEXT_TELEMETRY_DISABLED": "1",
-    "NEXT_SKIP_APP_STATIC_EVALUATION": "1",
-    "NODE_OPTIONS": "--max-old-space-size=4096"
-  }
+  "buildCommand": "NEXT_SKIP_PREFLIGHT_CHECK=true NEXT_SKIP_APP_STATIC_EVALUATION=1 npm run build",
+  "installCommand": "npm ci"
 } 
