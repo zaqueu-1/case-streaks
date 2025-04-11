@@ -1,6 +1,5 @@
 import "./globals.css"
 import Providers from "./providers"
-import Script from "next/script"
 import Header from "./components/Header"
 import CronInitializer from "./components/CronInitializer"
 import "./healthcheck"
@@ -31,10 +30,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <Header />
           <main>{children}</main>
         </Providers>
-        <Script
-          src='/_next/static/chunks/main-app.js'
-          strategy='afterInteractive'
-        />
       </body>
     </html>
   )
