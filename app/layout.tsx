@@ -2,7 +2,6 @@ import "./globals.css"
 import Providers from "./providers"
 import Header from "./components/Header"
 import CronInitializer from "./components/CronInitializer"
-import "./healthcheck"
 import { ReactNode } from "react"
 
 export const metadata = {
