@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { generateRandomAccesses } from "@/app/lib/cron"
 import { NextRequest } from "next/server"
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
+
 /**
  * Endpoint para ser chamado pelo GitHub Actions Cron
  * Como este endpoint não exige autenticação, adicionamos uma verificação simples
