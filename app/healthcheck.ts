@@ -1,6 +1,11 @@
 const cron = require("node-cron")
 
 async function checkHealth() {
+  // Verifica se está rodando no servidor
+  if (typeof window !== 'undefined') {
+    return
+  }
+
   console.log("Rodando healthcheck a cada 14 min")
 
   try {
@@ -18,4 +23,7 @@ async function checkHealth() {
   }
 }
 
-cron.schedule("*/14 * * * *", checkHealth)
+// Verifica se está rodando no servidor antes de agendar o cron
+if (typeof window === 'undefined') {
+  cron.schedule("*/14 * * * *", checkHealth)
+}
