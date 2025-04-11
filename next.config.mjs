@@ -2,37 +2,26 @@
 const nextConfig = {
   output: "standalone",
   
-  // Especificar as extensões de página explicitamente
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
-  
-  // Desabilitar a pré-renderização de páginas que começam com underscore
-  unstable_excludeDefaultMomentLocales: true,
-  disableStaticImages: true,
-  
-  // Pular completamente a pré-renderização estática de rotas especiais
-  skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
-  
-  // Configurações de imagem necessárias
+  // Desabilitar otimização e pré-renderização
+  swcMinify: false,
+  optimizeFonts: false,
+  compress: false,
+
+  // Configurações de imagem básicas
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "media.beehiiv.com",
-      },
-      {
-        protocol: "https",
-        hostname: "app.thenewscc.com.br",
-      },
-    ],
+    domains: ["media.beehiiv.com", "app.thenewscc.com.br"],
+    unoptimized: true,
   },
   
-  // Configurações experimentais para desabilitar otimizações problemáticas
+  // Experimental para App Router
   experimental: {
-    disableOptimizedLoading: true,
-    serverActions: {
-      enabled: true,
-    },
+    serverActions: true,
+    // Recursos experimentais para contornar problemas de URL
+    serverComponentsExternalPackages: ['url'],
+    appDocumentPreloading: false,
+    adjustFontFallbacks: false,
+    optimizePackageImports: false,
+    optimizeCss: false
   }
 }
 
