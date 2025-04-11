@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
   // Verificar se a solicitação é válida
-  if (!request.url) {
+  if (!request.url || !request.nextUrl || !request.nextUrl.origin) {
+    console.error("URL inválida na requisição:", request.url)
     return NextResponse.next()
   }
 
@@ -20,8 +21,10 @@ export async function middleware(request: NextRequest) {
     const isAdminPath = pathname === "/admin"
     const isDashboardPath = pathname === "/dashboard"
 
-    const safePathname = pathname || "/"
-    const baseUrl = request.nextUrl.origin
+    // Garantir que o pathname seja seguro e nunca vazio
+    const safePathname = pathname || "/dashboard"
+    // Garantir que baseUrl seja válido
+    const baseUrl = request.nextUrl.origin || "https://casestreaks.vercel.app"
 
     if (!isAuthenticated && !isPublicPath) {
       // Criar redirecionamento manualmente em vez de usar new URL

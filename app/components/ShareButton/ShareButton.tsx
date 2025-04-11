@@ -19,6 +19,12 @@ export default function ShareButton({ stats }: ShareButtonProps) {
       const blob = await new Promise<Blob>((resolve) =>
         canvas.toBlob((blob) => resolve(blob!), "image/png"),
       )
+      
+      if (!blob || blob.size === 0) {
+        console.error("Erro: Blob inválido ou vazio")
+        return
+      }
+      
       const file = new File([blob], "my-achievements.png", {
         type: "image/png",
       })
@@ -31,7 +37,9 @@ export default function ShareButton({ stats }: ShareButtonProps) {
         })
       } else {
         const shareUrl = URL.createObjectURL(blob)
-        window.open(shareUrl, "_blank")
+        if (shareUrl) {
+          window.open(shareUrl, "_blank")
+        }
       }
     } catch (error) {
       console.error("Erro ao compartilhar:", error)

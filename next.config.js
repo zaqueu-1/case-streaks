@@ -4,9 +4,39 @@ import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Melhorar o polyfill para URL quando não estiver disponível
 if (typeof global.URL === 'undefined') {
-  global.URL = function() {
-    return { pathname: '/' };
+  global.URL = class URL {
+    constructor(url, base) {
+      if (!url) throw new TypeError("Invalid URL");
+      
+      this.href = url;
+      this.origin = '';
+      this.protocol = 'https:';
+      this.username = '';
+      this.password = '';
+      this.host = '';
+      this.hostname = '';
+      this.port = '';
+      this.pathname = '/';
+      this.search = '';
+      this.hash = '';
+      
+      // Método toString para compatibilidade
+      this.toString = function() {
+        return this.href;
+      };
+    }
+    
+    // Método estático para criar objetos de URL 
+    static createObjectURL() {
+      return '';
+    }
+    
+    // Método estático para revogar objetos de URL
+    static revokeObjectURL() {
+      return;
+    }
   };
 }
 
