@@ -29,11 +29,24 @@ const nextConfig = {
       enabled: true,
     },
   },
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
   async rewrites() {
     return [
       {
         source: "/healthcheck",
         destination: "/api/healthcheck",
+      },
+      {
+        source: "/_not-found",
+        destination: "/dashboard",
+      },
+      {
+        source: "/_error",
+        destination: "/dashboard",
+      },
+      {
+        source: "/404",
+        destination: "/dashboard",
       },
     ]
   },
