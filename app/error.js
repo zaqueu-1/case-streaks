@@ -7,34 +7,30 @@ export default function Error({
   reset,
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
+    // Log do erro para análise
     console.error('Erro na aplicação:', error);
   }, [error]);
 
   return (
-    <div style={{ 
-      padding: '2rem', 
-      textAlign: 'center',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '50vh'
-    }}>
-      <h2 style={{ marginBottom: '1rem' }}>Algo deu errado!</h2>
-      <button
-        onClick={reset}
-        style={{
-          padding: '0.5rem 1rem',
-          backgroundColor: '#0070f3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '0.25rem',
-          cursor: 'pointer',
-        }}
-      >
-        Tentar novamente
-      </button>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">Erro</h1>
+        <h2 className="text-2xl mb-8">Algo deu errado</h2>
+        <button
+          onClick={() => reset()}
+          className="inline-block px-6 py-3 rounded-md bg-primary text-secondary font-medium"
+        >
+          Tentar novamente
+        </button>
+        <div className="mt-6">
+          <a 
+            href="/dashboard" 
+            className="inline-block px-6 py-3 rounded-md bg-gray-200 text-gray-700 font-medium"
+          >
+            Voltar para o Dashboard
+          </a>
+        </div>
+      </div>
     </div>
   );
 } 
