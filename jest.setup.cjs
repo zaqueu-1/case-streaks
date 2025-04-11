@@ -13,7 +13,8 @@ global.console = {
 // Mock do objeto process.env
 process.env = {
   ...process.env,
-  DATABASE_URL: "mock_database_url",
   NEXTAUTH_SECRET: "mock_secret",
   NEXTAUTH_URL: "http://localhost:3000",
+  NEXT_PUBLIC_SUPABASE_URL: "https://mock-supabase-url.supabase.co",
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key",
 }

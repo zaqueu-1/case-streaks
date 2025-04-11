@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { query } from "@/app/lib/postgres"
+import supabase from "@/app/lib/supabase"
 import { calculateLevelAndPoints } from "@/app/utils/utils"
 
 interface UpdateResult {
@@ -21,41 +21,59 @@ interface UpdateResult {
 export async function GET(): Promise<NextResponse<UpdateResult>> {
   try {
     // Buscar todos os usuários
-    const usersResult = await query("SELECT * FROM users")
+    const { data, error } = await supabase
+      .from('users')
+      .select()
+
+    if (error) {
+      console.error("Erro ao buscar usuários:", error)
+      return NextResponse.json(
+        { error: "Erro ao buscar usuários" },
+        { status: 500 }
+      )
+    }
+
     const results = []
 
-    for (const user of usersResult.rows) {
+    for (const user of data) {
       // Contar dias únicos de acesso (excluindo domingos)
-      const uniqueDaysResult = await query(
-        `SELECT COUNT(DISTINCT DATE(timestamp)) as unique_days
-         FROM accesses
-         WHERE user_id = $1
-         AND EXTRACT(DOW FROM timestamp) != 0`,
-        [user.id],
-      )
+      const { data: uniqueDaysResult, error: uniqueDaysError } = await supabase
+        .from('accesses')
+        .select('DISTINCT DATE(timestamp)')
+        .eq('user_id', user.id)
+        .eq('EXTRACT(DOW FROM timestamp)', '0')
 
-      const uniqueDays = parseInt(uniqueDaysResult.rows[0].unique_days)
+      if (uniqueDaysError) {
+        console.error("Erro ao buscar dias únicos de acesso:", uniqueDaysError)
+        continue
+      }
+
+      const uniqueDays = uniqueDaysResult.length
       const points = uniqueDays * 5
       const levelInfo = calculateLevelAndPoints(points)
 
       // Atualizar pontos e nível do usuário
-      const updateResult = await query(
-        `UPDATE users
-         SET points = $1,
-             level = $2,
-             total_accesses = (
-               SELECT COUNT(*) FROM accesses WHERE user_id = $3
-             )
-         WHERE id = $3
-         RETURNING *`,
-        [points, levelInfo.level, user.id],
-      )
+      const { data: updateResult, error: updateError } = await supabase
+        .from('users')
+        .update({
+          points: points,
+          level: levelInfo.level,
+          total_accesses: supabase
+            .from('accesses')
+            .select('COUNT(*)')
+            .eq('user_id', user.id)
+        })
+        .eq('id', user.id)
+        .select('*')
+        .single()
 
-      const updatedUser = updateResult.rows[0]
-      const totalAccesses = await query(
-        "SELECT COUNT(*) as count FROM accesses WHERE user_id = $1",
-        [user.id],
-      ).then((res) => parseInt(res.rows[0].count))
+      if (updateError) {
+        console.error("Erro ao atualizar pontos:", updateError)
+        continue
+      }
+
+      const updatedUser = updateResult
+      const totalAccesses = parseInt(updateResult.total_accesses)
 
       results.push({
         email: user.email,
@@ -84,6 +102,44 @@ export async function GET(): Promise<NextResponse<UpdateResult>> {
         message: error instanceof Error ? error.message : "Erro desconhecido",
       },
       { status: 500 },
+    )
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { email, points } = await req.json()
+
+    if (!email || typeof points !== 'number') {
+      return NextResponse.json(
+        { error: "Email e pontos são obrigatórios" },
+        { status: 400 }
+      )
+    }
+
+    const { level, points: newPoints } = calculateLevelAndPoints(points)
+
+    const { data, error } = await supabase
+      .from('users')
+      .update({ points: newPoints, level })
+      .eq('email', email)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Erro ao atualizar pontos:", error)
+      return NextResponse.json(
+        { error: "Erro ao atualizar pontos" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("Erro ao processar atualização de pontos:", error)
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
     )
   }
 }

@@ -1,4 +1,3 @@
-import { query } from "@/app/lib/postgres"
 import { NextRequest, NextResponse } from "next/server"
 import supabase from "@/app/lib/supabase"
 

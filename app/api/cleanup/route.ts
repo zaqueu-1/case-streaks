@@ -1,32 +1,27 @@
 import { NextResponse } from "next/server"
-import { query } from "@/app/lib/postgres"
-import { queries } from "@/app/lib/queries"
-import { NextRequest } from "next/server"
+import supabase from "@/app/lib/supabase"
 
-interface CleanupResponse {
-  message: string
-  totalCleaned?: number
-  error?: string
-}
-
-export async function GET(
-  req: NextRequest,
-): Promise<NextResponse<CleanupResponse>> {
+export async function POST(req: Request) {
   try {
-    const result = await query(queries.removeDuplicateAccesses)
+    const { data, error } = await supabase.rpc('remove_duplicate_accesses')
+
+    if (error) {
+      console.error("Erro ao limpar duplicatas:", error)
+      return NextResponse.json(
+        { error: "Erro ao limpar duplicatas" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
-      message: "Limpeza concluída com sucesso",
-      totalCleaned: result.rowCount || 0,
+      message: "Duplicatas removidas com sucesso",
+      removed: data?.length || 0
     })
   } catch (error) {
-    console.error("Erro na limpeza:", error)
+    console.error("Erro ao processar limpeza:", error)
     return NextResponse.json(
-      {
-        message: "Erro ao realizar limpeza",
-        error: error instanceof Error ? error.message : "Erro desconhecido",
-      },
-      { status: 500 },
+      { error: "Erro interno do servidor" },
+      { status: 500 }
     )
   }
 }

@@ -4,9 +4,29 @@ import { query } from "../../lib/postgres"
 import { middleware } from "../../../middleware"
 import { jest, describe, it, expect, beforeEach } from "@jest/globals"
 import { QueryResult } from "pg"
+import { GET, POST } from "../auth/[...nextauth]/route"
+import supabase from "@/app/lib/supabase"
 
 jest.mock("next-auth/jwt")
 jest.mock("../../lib/postgres")
+
+// Mock do Supabase
+jest.mock("@/app/lib/supabase", () => ({
+  __esModule: true,
+  default: {
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({
+      data: {
+        id: "123",
+        email: "test@example.com",
+        is_admin: false,
+      },
+      error: null,
+    }),
+  },
+}))
 
 type MockQuery = jest.MockedFunction<typeof query>
 type MockGetToken = jest.MockedFunction<typeof getToken>
@@ -29,7 +49,7 @@ async function testAuthentication(email: string) {
 
 describe("Auth API", () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   describe("Middleware de Autenticação", () => {
@@ -136,5 +156,40 @@ describe("Auth API", () => {
         ["invalid@example.com"],
       )
     })
+  })
+
+  it("deve autenticar um usuário existente", async () => {
+    const req = new NextRequest("http://localhost:3000/api/auth/session", {
+      method: "GET",
+      headers: {
+        cookie: "next-auth.session-token=test-token",
+      },
+    })
+
+    const response = await GET(req)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toHaveProperty("user")
+    expect(data.user).toHaveProperty("email", "test@example.com")
+  })
+
+  it("deve retornar erro para usuário não encontrado", async () => {
+    // Mock do Supabase para retornar erro
+    const mockSupabase = jest.requireMock("@/app/lib/supabase") as jest.Mocked<typeof supabase>
+    mockSupabase.default.from().select().eq().single.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Usuário não encontrado" },
+    })
+
+    const req = new NextRequest("http://localhost:3000/api/auth/session", {
+      method: "GET",
+      headers: {
+        cookie: "next-auth.session-token=test-token",
+      },
+    })
+
+    const response = await GET(req)
+    expect(response.status).toBe(401)
   })
 })

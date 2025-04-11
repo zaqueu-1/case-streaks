@@ -104,7 +104,7 @@ O projeto utiliza Jest para testes automatizados, cobrindo:
 - Next.js com App Router
 - TypeScript
 - Tailwind CSS
-- PostgreSQL / Supabase
+- Supabase (Banco de dados, Autenticação e Armazenamento)
 - Docker
 - Chart.js
 - Next-Auth
@@ -130,13 +130,22 @@ npm install
 cp .env.example .env.local
 ```
 
-4. Inicie a aplicação
+4. Configure as variáveis no arquivo `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+NEXTAUTH_SECRET=sua_chave_secreta
+NEXTAUTH_URL=http://localhost:3000
+```
+
+5. Inicie a aplicação
 
 ```bash
 docker compose up -d
 ```
 
-5. Execute os testes
+6. Execute os testes
 
 ```bash
 npm test
@@ -208,13 +217,13 @@ app/
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR(255) UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
   is_admin BOOLEAN DEFAULT FALSE,
-  last_access TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  total_accesses INTEGER DEFAULT 0,
   points INTEGER DEFAULT 0,
-  level INTEGER DEFAULT 1
+  level INTEGER DEFAULT 1,
+  total_accesses INTEGER DEFAULT 0,
+  last_access TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
@@ -224,12 +233,12 @@ CREATE TABLE users (
 CREATE TABLE accesses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  post_id VARCHAR(255) NOT NULL,
-  timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  utm_source VARCHAR(255),
-  utm_medium VARCHAR(255),
-  utm_campaign VARCHAR(255),
-  utm_channel VARCHAR(255)
+  post_id TEXT NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  utm_source TEXT,
+  utm_medium TEXT,
+  utm_campaign TEXT,
+  utm_channel TEXT
 );
 ```
 
@@ -250,7 +259,7 @@ CREATE INDEX idx_users_points ON users(points DESC);
 
 - Next.js foi escolhido pela facilidade de criar uma aplicação full-stack com React (requisito do desafio) e pela minha familiaridade com o framework
 - TypeScript para type safety (requisito do desafio)
-- PostgreSQL pela robustez, confiabilidade e recursos avançados de consulta (sendo SQL o requisito do desafio)
+- Supabase pela robustez, confiabilidade e recursos avançados de consulta (sendo SQL o requisito do desafio)
 - TailwindCSS para estilização rápida e consistente
 
 **Quais problemas você enfrentou ao desenvolver?** O maior desafio foi implementar a lógica de streaks desconsiderando os domingos e fazendo com que o avanço fosse mantido. Isso também acaba sendo refletido no sistema de níveis e, consequentemente, no sistema de badges, tornando essa regra de negócio a mais vital da aplicação.
@@ -261,7 +270,7 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 
 ### Dados
 
-**Qual a estrutura do seu banco?** O PostgreSQL foi escolhido por sua robustez, confiabilidade e recursos avançados de consulta. A estrutura relacional com tabelas `users` e `accesses` permite um controle preciso dos dados e facilita consultas complexas usando recursos como CTEs e window functions.
+**Qual a estrutura do seu banco?** O Supabase foi escolhido por sua robustez, confiabilidade e recursos avançados de consulta. A estrutura relacional com tabelas `users` e `accesses` permite um controle preciso dos dados e facilita consultas complexas usando recursos como CTEs e window functions.
 
 **Como você lida com as inserções e consultas dos leitores?**
 
@@ -273,7 +282,7 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 
 **Ele é escalável? Explique.** Sim, o sistema é escalável por vários motivos:
 
-1. PostgreSQL suporta particionamento de tabelas
+1. Supabase suporta particionamento de tabelas
 2. Índices otimizam consultas comuns
 3. Stateless API permite múltiplas instâncias
 4. Cache reduz carga no banco
@@ -289,14 +298,7 @@ Evitar duplicatas nas chamadas do webhook também foi um pequeno problema, mas c
 
 ### 2. Configuração de Cron Jobs
 
-#### Opção 1: Vercel Cron Jobs (Requer plano Pro ou Enterprise)
-
-Os cron jobs são configurados automaticamente através do arquivo `vercel.json`. 
-O projeto está configurado para executar a geração de dados aleatórios a cada hora.
-
-**Importante**: Para habilitar cron jobs na Vercel, você precisa ter um plano Pro ou Enterprise.
-
-#### Opção 2: GitHub Actions (Gratuito)
+#### GitHub Actions (Gratuito)
 
 Caso não tenha um plano pago da Vercel, este projeto inclui uma configuração alternativa usando GitHub Actions para simular os cron jobs.
 
