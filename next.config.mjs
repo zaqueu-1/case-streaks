@@ -33,14 +33,7 @@ const nextConfig = {
     serverActions: {
       enabled: true,
     },
-  },
-  
-  // Configuração para excluir páginas específicas da pré-renderização
-  exportPathMap: async function (defaultPathMap) {
-    // Remover explicitamente a página _not-found do mapa de exportação
-    delete defaultPathMap['/_not-found'];
-    return defaultPathMap;
-  },
+  }
 }
 
 export default nextConfig
