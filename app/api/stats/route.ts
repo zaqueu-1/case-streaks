@@ -4,12 +4,14 @@ import { StatsResponse, RecentAccess } from "@/app/types/news"
 import { NextRequest } from "next/server"
 import { calculateLevelAndPoints } from "@/app/utils/utils"
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
+
 export async function GET(
   req: NextRequest,
 ): Promise<NextResponse<StatsResponse | { error: string }>> {
   try {
-    const { searchParams } = new URL(req.url)
-    const email = searchParams.get("email")
+    const email = req.nextUrl.searchParams.get("email")
 
     if (!email) {
       return NextResponse.json(

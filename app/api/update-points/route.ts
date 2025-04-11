@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import supabase from "@/app/lib/supabase"
 import { calculateLevelAndPoints } from "@/app/utils/utils"
+import { NextRequest } from "next/server"
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
 
 interface UpdateResult {
   message?: string
@@ -18,7 +22,7 @@ interface UpdateResult {
   }>
 }
 
-export async function GET(): Promise<NextResponse<UpdateResult>> {
+export async function GET(req: NextRequest): Promise<NextResponse<UpdateResult>> {
   try {
     // Buscar todos os usuários
     const { data, error } = await supabase
