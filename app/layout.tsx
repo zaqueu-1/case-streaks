@@ -1,28 +1,38 @@
-import { Inter } from "next/font/google"
 import "./globals.css"
 import Providers from "./providers"
-import { ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
-
-const inter = Inter({ subsets: ["latin"] })
+import Script from "next/script"
+import Header from "./components/Header"
+import "./healthcheck"
+import { ReactNode } from "react"
 
 export const metadata = {
-  title: "Case Streaks",
-  description: "Acompanhe suas streaks e métricas de acesso",
+  title: "the news - dashboard",
+  description: "Acompanhe seu streak em nossa newsletter!",
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+interface RootLayoutProps {
+  children: ReactNode
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
+    <html lang='pt-BR'>
+      <head>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <link
+          href='https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap'
+          rel='stylesheet'
+        />
+      </head>
+      <body className='font-poppins bg-[#F9FAFB]' suppressHydrationWarning>
         <Providers>
-          {children}
-          <ToastContainer />
+          <Header />
+          <main>{children}</main>
         </Providers>
+        <Script
+          src='/_next/static/chunks/main-app.js'
+          strategy='afterInteractive'
+        />
       </body>
     </html>
   )

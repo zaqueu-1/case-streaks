@@ -1,92 +1,117 @@
 import { NextRequest } from "next/server"
-import { GET, POST } from "../update-points/route"
-import supabase from "@/app/lib/supabase"
+import { GET } from "../update-points/route"
+import { query } from "../../lib/postgres"
 import { jest, describe, it, expect, beforeEach } from "@jest/globals"
+import { QueryResult } from "pg"
 
-// Mock do Supabase
-jest.mock("@/app/lib/supabase", () => ({
-  __esModule: true,
-  default: {
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({
-      data: {
-        id: "123",
-        email: "test@example.com",
-        points: 100,
-        level: 2,
-      },
-      error: null,
-    }),
-  },
-}))
+jest.mock("../../lib/postgres")
+
+type MockQuery = jest.MockedFunction<typeof query>
 
 describe("Update Points API", () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it("deve atualizar pontos de um usuário específico", async () => {
-    const req = new NextRequest("http://localhost:3000/api/update-points", {
-      method: "POST",
-      body: JSON.stringify({
-        email: "test@example.com",
-        points: 150,
-      }),
-    })
+  it("deve atualizar pontos e níveis com sucesso", async () => {
+    const mockUsers = [
+      { id: "1", email: "user1@test.com", points: 0, level: 1 },
+      { id: "2", email: "user2@test.com", points: 0, level: 1 },
+    ]
 
-    const response = await POST(req)
+    ;(query as MockQuery)
+      .mockResolvedValueOnce({
+        rows: mockUsers,
+        command: "",
+        rowCount: 2,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ unique_days: 5 }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ ...mockUsers[0], points: 25, level: 3 }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ count: "10" }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ unique_days: 3 }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ ...mockUsers[1], points: 15, level: 2 }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+      .mockResolvedValueOnce({
+        rows: [{ count: "6" }],
+        command: "",
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult)
+
+    const req = new NextRequest(new URL("http://localhost/api/update-points"))
+    //@ts-ignore
+    const response = await GET(req)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data).toHaveProperty("email", "test@example.com")
-    expect(data).toHaveProperty("points", 100)
-    expect(data).toHaveProperty("level", 2)
+    expect(data).toMatchObject({
+      message: "Pontos e níveis atualizados com sucesso",
+      totalUpdated: 2,
+      details: expect.arrayContaining([
+        expect.objectContaining({
+          email: "user1@test.com",
+          uniqueDays: 5,
+          points: 25,
+          level: 3,
+          success: true,
+        }),
+        expect.objectContaining({
+          email: "user2@test.com",
+          uniqueDays: 3,
+          points: 15,
+          level: 2,
+          success: true,
+        }),
+      ]),
+    })
   })
 
-  it("deve retornar erro quando o email não for fornecido", async () => {
-    const req = new NextRequest("http://localhost:3000/api/update-points", {
-      method: "POST",
-      body: JSON.stringify({
-        points: 150,
-      }),
-    })
+  it("deve retornar erro 500 quando houver falha na atualização", async () => {
+    ;(query as MockQuery).mockRejectedValue(
+      new Error("Erro ao atualizar pontos"),
+    )
 
-    const response = await POST(req)
-    expect(response.status).toBe(400)
-  })
+    const req = new NextRequest(new URL("http://localhost/api/update-points"))
+    //@ts-ignore
+    const response = await GET(req)
+    const data = await response.json()
 
-  it("deve retornar erro quando os pontos não forem fornecidos", async () => {
-    const req = new NextRequest("http://localhost:3000/api/update-points", {
-      method: "POST",
-      body: JSON.stringify({
-        email: "test@example.com",
-      }),
-    })
-
-    const response = await POST(req)
-    expect(response.status).toBe(400)
-  })
-
-  it("deve retornar erro quando o usuário não for encontrado", async () => {
-    // Mock do Supabase para retornar erro
-    const mockSupabase = jest.requireMock("@/app/lib/supabase") as jest.Mocked<typeof supabase>
-    mockSupabase.default.from().select().eq().single.mockResolvedValueOnce({
-      data: null,
-      error: { message: "Usuário não encontrado" },
-    })
-
-    const req = new NextRequest("http://localhost:3000/api/update-points", {
-      method: "POST",
-      body: JSON.stringify({
-        email: "notfound@example.com",
-        points: 150,
-      }),
-    })
-
-    const response = await POST(req)
     expect(response.status).toBe(500)
+    expect(data).toMatchObject({
+      error: "Erro ao atualizar pontos",
+      message: "Erro ao atualizar pontos",
+    })
   })
 })

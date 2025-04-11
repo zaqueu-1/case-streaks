@@ -1,50 +1,56 @@
 import { NextRequest } from "next/server"
 import { GET } from "../healthcheck/route"
-import supabase from "@/app/lib/supabase"
+import { query } from "../../lib/postgres"
 import { jest, describe, it, expect, beforeEach } from "@jest/globals"
+import { QueryResult } from "pg"
 
-// Mock do Supabase
-jest.mock("@/app/lib/supabase", () => ({
-  __esModule: true,
-  default: {
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    count: jest.fn().mockReturnThis(),
-    head: jest.fn().mockResolvedValue({
-      data: null,
-      error: null,
-    }),
-  },
-}))
+jest.mock("../../lib/postgres")
+
+type MockQuery = jest.MockedFunction<typeof query>
 
 describe("Healthcheck API", () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it("deve retornar status healthy quando tudo estiver funcionando", async () => {
-    const req = new NextRequest("http://localhost:3000/api/healthcheck")
+  it("deve retornar status healthy quando o banco estiver conectado", async () => {
+    ;(query as MockQuery).mockResolvedValue({
+      rows: [{ "?column?": 1 }],
+      command: "",
+      rowCount: 1,
+      oid: 0,
+      fields: [],
+    } as QueryResult)
+
+    const req = new NextRequest(new URL("http://localhost/api/healthcheck"))
     const response = await GET(req)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.status).toBe("healthy")
-    expect(data.database.status).toBe("connected")
+    expect(data).toMatchObject({
+      status: "healthy",
+      database: {
+        connected: true,
+      },
+    })
+    expect(data.timestamp).toBeDefined()
   })
 
   it("deve retornar status unhealthy quando houver erro no banco", async () => {
-    // Mock do Supabase para retornar erro
-    const mockSupabase = jest.requireMock("@/app/lib/supabase") as jest.Mocked<typeof supabase>
-    mockSupabase.default.from().select().count().head.mockResolvedValueOnce({
-      data: null,
-      error: { message: "Erro de conexão" },
-    })
+    ;(query as MockQuery).mockRejectedValue(new Error("Erro de conexão"))
 
-    const req = new NextRequest("http://localhost:3000/api/healthcheck")
+    const req = new NextRequest(new URL("http://localhost/api/healthcheck"))
     const response = await GET(req)
     const data = await response.json()
 
     expect(response.status).toBe(500)
-    expect(data.status).toBe("unhealthy")
+    expect(data).toMatchObject({
+      status: "unhealthy",
+      database: {
+        connected: false,
+        error: "Erro de conexão",
+      },
+    })
+    expect(data.timestamp).toBeDefined()
   })
 })
