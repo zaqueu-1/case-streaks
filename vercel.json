@@ -2,6 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "chmod +x build-clean.sh && ./build-clean.sh",
   "installCommand": "npm ci",
-  "ignoreCommand": "echo 'Skipping deployment if .vercelignore exists'",
   "outputDirectory": ".next"
 } 
