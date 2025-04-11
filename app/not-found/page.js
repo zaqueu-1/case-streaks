@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic' // Forçar renderização dinâmica
+
 export default function NotFoundPage() {
   return (
     <div style={{ textAlign: 'center', padding: '2rem' }}>

@@ -82,7 +82,7 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
-  webpack: (config, { isServer, dev }) => {
+  webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname),
@@ -94,7 +94,6 @@ const nextConfig = {
       "fs": false,
       "net": false,
       "tls": false,
-      "url": false,
     }
     
     return config
