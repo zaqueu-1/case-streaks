@@ -9,6 +9,8 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  skipMiddlewareUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
@@ -63,6 +65,10 @@ const nextConfig = {
       },
     ]
   },
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -75,6 +81,7 @@ const nextConfig = {
       "fs": false,
       "net": false,
       "tls": false,
+      "url": false,
     }
     
     return config
