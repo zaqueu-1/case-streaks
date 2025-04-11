@@ -3,7 +3,9 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "env": {
-    "NEXT_PUBLIC_SITE_URL": "https://casestreaks.vercel.app"
+    "NEXT_PUBLIC_SITE_URL": "https://casestreaks.vercel.app",
+    "SKIP_STATIC_GENERATION_FOR_NOT_FOUND": "true",
+    "NODE_OPTIONS": "--no-warnings"
   },
   "headers": [
     {

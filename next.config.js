@@ -70,6 +70,10 @@ const nextConfig = {
       enabled: true,
     },
   },
+  // Desativar a pré-renderização para certas páginas
+  excludeDefaultMomentLocales: true,
+  // Desativar geração estática para a página not-found
+  unstable_excludePages: ['/_not-found'],
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -89,10 +93,7 @@ const nextConfig = {
         source: "/healthcheck",
         destination: "/api/healthcheck",
       },
-      {
-        source: "/_not-found",
-        destination: "/dashboard",
-      },
+      // Remover o rewrite para _not-found para evitar problemas
       {
         source: "/_error",
         destination: "/dashboard",
