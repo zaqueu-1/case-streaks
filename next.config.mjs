@@ -48,11 +48,10 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
-  staticPageGenerationTimeout: 120,
-  // Adicionar variáveis de ambiente públicas
-  env: {
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "https://casestreaks.vercel.app",
-  },
+  
+  // Aumentar o timeout para a geração estática
+  staticPageGenerationTimeout: 180,
+  
   images: {
     remotePatterns: [
       {
@@ -65,11 +64,13 @@ const nextConfig = {
       },
     ],
   },
+  
   experimental: {
     serverActions: {
       enabled: true,
     },
   },
+  
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -77,21 +78,15 @@ const nextConfig = {
       "fs": false,
       "net": false,
       "tls": false,
-      // Adicionar fallback para URL diretamente sem require.resolve
-      "url": false,
     }
-    
     return config
   },
+  
   async rewrites() {
     return [
       {
         source: "/healthcheck",
         destination: "/api/healthcheck",
-      },
-      {
-        source: "/_not-found",
-        destination: "/dashboard",
       },
       {
         source: "/_error",
@@ -100,19 +95,6 @@ const nextConfig = {
       {
         source: "/404",
         destination: "/dashboard",
-      },
-    ]
-  },
-  async headers() {
-    return [
-      {
-        source: "/api/healthcheck",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, max-age=0",
-          },
-        ],
       },
     ]
   },
