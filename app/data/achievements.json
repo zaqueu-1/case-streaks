@@ -1,0 +1,39 @@
+{
+  "achievements": [
+    {
+      "id": "first_access",
+      "icon": "🎯",
+      "title": "Start",
+      "description": "Começou sua jornada de leitura",
+      "condition": "true"
+    },
+    {
+      "id": "first_streak",
+      "icon": "🔥",
+      "title": "Na Sequência!",
+      "description": "Completou 2 dias seguidos de leitura",
+      "condition": "stats?.longestStreak >= 2"
+    },
+    {
+      "id": "week_master",
+      "icon": "📚",
+      "title": "Rito Semanal",
+      "description": "Completou 7 dias de leitura",
+      "condition": "stats?.longestStreak >= 7"
+    },
+    {
+      "id": "level_5",
+      "icon": "⭐",
+      "title": "Temos um Padawan",
+      "description": "Atingiu o nível 3",
+      "condition": "stats?.level >= 3"
+    },
+    {
+      "id": "month_master",
+      "icon": "🏆",
+      "title": "Mestre da Informação",
+      "description": "Completou 30 dias de leitura",
+      "condition": "stats?.longestStreak >= 30"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: case-streaks-app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/case_streaks
+      - NEXTAUTH_SECRET=YoJQvKdD+UtJkmK/JUhNbEDBrw30upbT0Utxhnl8LQs=
+      - NEXTAUTH_URL=http://localhost:3000
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - db
+    networks:
+      - case-streaks-network
+    command: npm run dev
+
+  db:
+    image: postgres:15-alpine
+    container_name: case-streaks-db
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=case_streaks
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - case-streaks-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: case-streaks-pgadmin
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - db
+    networks:
+      - case-streaks-network
+
+volumes:
+  postgres_data:
+
+networks:
+  case-streaks-network:
+    driver: bridge
